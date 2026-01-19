@@ -9,7 +9,7 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
   if (images.length === 0) return null;
 
   const copyMeta = (img: GeneratedImage) => {
-    const data = JSON.stringify({ prompt: img.prompt, style: img.style, seed: img.seed, model: img.model }, null, 2);
+    const data = JSON.stringify({ prompt: img.prompt, style: img.style, pose: img.pose, seed: img.seed, model: img.model }, null, 2);
     navigator.clipboard.writeText(data);
     alert("Metadata copied!");
   };

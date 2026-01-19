@@ -18,6 +18,7 @@ export interface GeneratedImage {
   style: ThumbnailStyle;
   model: ModelType;
   avatarModel: AvatarModel;
+  pose?: string;
   timestamp: number;
   seed?: number;
 }
@@ -30,6 +31,7 @@ export interface ThumbnailConfig {
   style: ThumbnailStyle;
   model: ModelType;
   avatarModel: AvatarModel;
+  pose?: string;
   seed?: number;
 }
 

@@ -5,7 +5,7 @@ import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, PromptTemplate } 
 import { ImageEditor } from './ImageEditor';
 
 interface ThumbnailGeneratorProps {
-  onImageGenerated: (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, negativePrompt?: string, seed?: number) => void;
+  onImageGenerated: (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, pose?: string, negativePrompt?: string, seed?: number) => void;
 }
 
 const ADVANCED_PROMPTS: PromptTemplate[] = [
@@ -25,6 +25,17 @@ const NEGATIVE_PRESETS = {
   cinematic: "cartoon, cel shaded, flat, 2d, sketch, drawing, bright colors, saturated, low poly, plastic skin, doll",
   horror: "bright, happy, sunlight, cute, saturated, colorful, cartoon, funny, toy, plastic"
 };
+
+const POSES = [
+    { id: 'standing', label: 'Idle / Standing' },
+    { id: 'jumping', label: 'Jumping / Parkour' },
+    { id: 'fighting', label: 'Combat Stance' },
+    { id: 'running', label: 'Running / Chasing' },
+    { id: 'sitting', label: 'Sitting / Relaxed' },
+    { id: 'victory', label: 'Victory / Cheering' },
+    { id: 'falling', label: 'Falling / Defeat' },
+    { id: 'portrait', label: 'Face Close-up' }
+];
 
 const CORS_PROXY = "https://corsproxy.io/?";
 
@@ -46,6 +57,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
   const [avatarModel, setAvatarModel] = useState<AvatarModel>('Rthro'); 
+  const [pose, setPose] = useState<string>('standing');
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -149,7 +161,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         if (runParallel) {
             const promises = Array.from({ length: batchSize }, (_, i) => {
                 const currentSeed = seed + i;
-                const config = { prompt, negativePrompt: negativePrompt || undefined, referenceImage: referenceImage || undefined, aspectRatio, style, model, avatarModel, seed: currentSeed };
+                const config = { prompt, negativePrompt: negativePrompt || undefined, referenceImage: referenceImage || undefined, aspectRatio, style, model, avatarModel, pose, seed: currentSeed };
                 return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
             });
 
@@ -162,15 +174,15 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
             }
             const results = await Promise.all(promises);
             results.forEach((res, i) => {
-                 onImageGenerated(res.data, prompt, style, model, avatarModel, negativePrompt, res.seed);
+                 onImageGenerated(res.data, prompt, style, model, avatarModel, pose, negativePrompt, res.seed);
                  if (i === 0) setEditorImage(res.data);
             });
         } else {
             for (let i = 0; i < batchSize; i++) {
                 const currentSeed = seed + i;
-                const config = { prompt, negativePrompt: negativePrompt || undefined, referenceImage: referenceImage || undefined, aspectRatio, style, model, avatarModel, seed: currentSeed };
+                const config = { prompt, negativePrompt: negativePrompt || undefined, referenceImage: referenceImage || undefined, aspectRatio, style, model, avatarModel, pose, seed: currentSeed };
                 const imageData = await generateThumbnail(config);
-                onImageGenerated(imageData, prompt, style, model, avatarModel, negativePrompt, currentSeed);
+                onImageGenerated(imageData, prompt, style, model, avatarModel, pose, negativePrompt, currentSeed);
                 if (i === 0) setEditorImage(imageData);
                 setProgress(((i + 1) / batchSize) * 100);
             }
@@ -267,6 +279,20 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                                 </button>
                             ))}
                          </div>
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 block">Character Pose</label>
+                        <div className="flex flex-wrap gap-2">
+                            {POSES.map((p) => (
+                                <button
+                                    key={p.id}
+                                    onClick={() => setPose(p.id)}
+                                    className={`px-4 py-2 rounded-lg text-[10px] uppercase font-bold tracking-wider border transition-all ${pose === p.id ? 'bg-white text-black border-white' : 'bg-transparent border-white/10 text-slate-500 hover:text-white hover:border-white/30'}`}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

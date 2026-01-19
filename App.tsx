@@ -31,7 +31,7 @@ function App() {
     }
   }, [generatedImages]);
 
-  const handleImageGenerated = (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, negativePrompt?: string, seed?: number) => {
+  const handleImageGenerated = (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, pose?: string, negativePrompt?: string, seed?: number) => {
     const newImage: GeneratedImage = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
       data: imageData,
@@ -40,6 +40,7 @@ function App() {
       style,
       model,
       avatarModel,
+      pose,
       timestamp: Date.now(),
       seed
     };
