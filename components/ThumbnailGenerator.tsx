@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { generateThumbnail, enhancePrompt, getActiveNodeCount, getCooldownStatus } from '../services/geminiService';
+import React, { useState, useRef } from 'react';
+import { generateThumbnail, enhancePrompt, getActiveNodeCount } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailConfig, ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, PromptTemplate } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, PromptTemplate } from '../types';
 import { ImageEditor } from './ImageEditor';
 
 interface ThumbnailGeneratorProps {
@@ -55,22 +55,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [isFetchingAvatar, setIsFetchingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorImage, setEditorImage] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let interval: any;
-    if (isGenerating) {
-        interval = setInterval(() => {
-            const cd = getCooldownStatus();
-            setCooldown(Math.ceil(cd / 1000));
-        }, 500);
-    } else {
-        setCooldown(0);
-    }
-    return () => clearInterval(interval);
-  }, [isGenerating]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -147,7 +133,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     }
     
     if (getActiveNodeCount() === 0) {
-        setError("CLUSTER_OFFLINE: No Valid API Keys found.");
+        setError("CLUSTER_OFFLINE: No Valid API Keys found. Check your .env configuration.");
         return;
     }
 
@@ -191,7 +177,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Cluster Engine Error. Nodes might be saturated.");
+      setError(err.message || "Engine Error. Please try a different prompt or model.");
     } finally {
       setIsGenerating(false);
       setProgress(0);
@@ -365,9 +351,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     className={`w-full py-8 rounded-3xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl transition-all relative overflow-hidden group ${isGenerating ? 'bg-[#0a0a10] cursor-not-allowed border border-white/5' : 'bg-white text-black hover:scale-[1.02] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.4)]'}`}
                 >
                     <span className="relative z-10 flex items-center justify-center gap-3">
-                        {isGenerating ? (
-                            cooldown > 0 ? `Cooldown (${cooldown}s)` : `Processing ${Math.round(progress)}%`
-                        ) : 'INITIALIZE RENDER'}
+                        {isGenerating ? `Processing ${Math.round(progress)}%` : 'INITIALIZE RENDER'}
                     </span>
                     {isGenerating && (
                         <div className="absolute bottom-0 left-0 h-1.5 bg-neon-blue transition-all duration-300" style={{ width: `${progress}%` }}></div>

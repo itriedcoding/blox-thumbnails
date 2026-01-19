@@ -2,48 +2,37 @@ import { GoogleGenAI } from "@google/genai";
 import { ThumbnailConfig, ThumbnailStyle, ModelType } from "../types";
 
 // ==========================================
-// 🚀 NANO BANANA CLUSTER ENGINE (V8.2 - SECURITY PATCH)
+// 🚀 NANO BANANA CLUSTER ENGINE (V9.0 - UNLIMITED)
 // ==========================================
-// - Removed Compromised Nodes
-// - Added LocalStorage Override (Emergency Key Injection)
-// - Enhanced Error Telemetry for Leaked Keys
-// - Auto-Downgrade Protection
 
 // 1. CLUSTER STATE
 let keyCursor = 0;
 const BLACKLIST_TIMEOUT = 1000 * 60 * 1; 
 const failedKeys = new Map<string, number>();
 
-// Track global cooldown to update UI
-let globalCooldownEnd = 0;
-export const getCooldownStatus = (): number => {
-    const remaining = globalCooldownEnd - Date.now();
-    return remaining > 0 ? remaining : 0;
-};
-
 // 2. INTELLIGENT KEY INGESTION
 const getKeyPool = (): string[] => {
   const rawSources = [
-    // 1. Emergency Override (Browser Storage) - Highest Priority for quick fixes
-    typeof window !== 'undefined' ? localStorage.getItem('bloxthumb_override_key') : null,
-    
-    // 2. Environment Variables
-    process.env.API_KEY,
-    process.env.VITE_API_KEY,
-    process.env.NEXT_PUBLIC_API_KEY,
+    // 1. Environment Variables (Vite/Next/Node)
     (import.meta as any).env?.VITE_API_KEY,
-    (import.meta as any).env?.API_KEY
+    (import.meta as any).env?.API_KEY,
+    process.env.VITE_API_KEY,
+    process.env.API_KEY,
+    process.env.NEXT_PUBLIC_API_KEY,
+    // 2. Emergency Override (Browser Storage)
+    typeof window !== 'undefined' ? localStorage.getItem('bloxthumb_override_key') : null
   ];
 
   const rawData = rawSources.filter(Boolean).join("\n");
 
   if (!rawData.trim()) return [];
   
+  // Extract AIza keys
   const regex = /AIza[0-9A-Za-z-_]{35}/g;
   let foundKeys: string[] = rawData.match(regex) || [];
 
   if (foundKeys.length === 0) {
-      // Fallback: try splitting by newlines/commas if regex fails but data exists
+      // Fallback: simple split if regex fails but data looks valid
       foundKeys = rawData.split(/[\n,;\s]+/).filter(k => k.startsWith("AIza") && k.length >= 39);
   }
   
@@ -77,7 +66,7 @@ const blacklistKey = (key: string, reason: string) => {
 const getNextNode = (): string => {
   const pool = getKeyPool();
   if (pool.length === 0) {
-    throw new Error("CLUSTER_OFFLINE: No Valid API Keys found. Please update .env or use the Emergency Input.");
+    throw new Error("CLUSTER_OFFLINE: No Valid API Keys found. Please check your .env file.");
   }
   const key = pool[keyCursor % pool.length];
   keyCursor++;
@@ -102,8 +91,8 @@ const executeOnCluster = async <T>(
   description: string
 ): Promise<T> => {
   const poolSize = getKeyPool().length;
-  // If we only have 1 key, we must be patient. If many, we can fail fast and rotate.
-  const maxRetries = poolSize === 1 ? 8 : Math.max(5, Math.min(poolSize * 3, 15)); 
+  // Fail fast if we only have 1 key, otherwise rotate
+  const maxRetries = poolSize === 1 ? 5 : Math.min(poolSize * 2, 10); 
 
   let lastError: any = null;
 
@@ -122,7 +111,7 @@ const executeOnCluster = async <T>(
       const isQuotaError = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED");
       const isServerOverload = msg.includes("503") || msg.includes("500") || msg.includes("overloaded");
 
-      // SMART RATE LIMIT BYPASS
+      // INTERNAL RATE LIMIT HANDLING (Invisible to user)
       const retryMatch = msg.match(/retry in (\d+(\.\d+)?)s/);
       
       if (retryMatch || isQuotaError) {
@@ -130,39 +119,31 @@ const executeOnCluster = async <T>(
          if (retryMatch) {
              waitTime = parseFloat(retryMatch[1]) * 1000 + 1000; 
          } else {
-             waitTime = attempt * 2000;
+             waitTime = attempt * 1500;
          }
 
-         console.warn(`[Cluster] Rate Limit Hit via Node ${currentKey.substring(0,6)}... Cooling down for ${(waitTime/1000).toFixed(1)}s`);
-         
-         globalCooldownEnd = Date.now() + waitTime;
+         console.warn(`[Cluster] Rate Limit hit on Node. Retrying internally in ${(waitTime/1000).toFixed(1)}s...`);
          
          await new Promise(resolve => setTimeout(resolve, waitTime));
          
          if (poolSize > 1) {
-             continue; // Rotate
+             continue; // Rotate to next key
          } else {
-             attempt--; // Don't count waiting as a failed attempt for single key
-             continue; // Retry same key
+             // If single key, just retry same key after wait
+             continue; 
          }
       }
 
       if (isAuthError) {
          if (isLeakedKey) {
              blacklistKey(currentKey, "KEY LEAKED");
-             // If this was our only key, we need to stop immediately and ask for a new one
-             if (getActiveNodeCount() === 0) {
-                 throw new Error("SECURITY ALERT: API Key was reported as leaked by Google. Please generate a new key at aistudio.google.com");
-             }
          } else if (msg.includes("API key not valid") || msg.includes("deleted") || msg.includes("project not found")) {
              blacklistKey(currentKey, "Invalid Key");
          } else {
-             console.warn(`[Cluster] Auth/Billing Error on Node ${currentKey.substring(0,8)}. Key retained for fallback.`);
+             console.warn(`[Cluster] Auth Error. Retrying...`);
          }
          
-         // Throw immediately so we can trigger the model fallback logic in generateThumbnail
-         // unless we have other keys to try
-         if (poolSize === 1) throw error;
+         if (poolSize === 1 && attempt === maxRetries) throw error;
          continue;
       }
       
@@ -171,11 +152,12 @@ const executeOnCluster = async <T>(
          continue;
       }
       
-      throw error; 
+      // For other errors, throw immediately unless it's a transient network issue
+      if (!msg.includes("fetch")) throw error;
     }
   }
   
-  throw new Error(`Cluster Failed: ${description} could not be completed. Last error: ${lastError?.message || "Unknown"}`);
+  throw new Error(`Generation Failed: ${description}. Error: ${lastError?.message || "Unknown"}`);
 };
 
 // ==========================================
@@ -198,7 +180,7 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
   if (getActiveNodeCount() === 0) return originalPrompt;
 
-  // Enhance uses Flash, so it should be safe on free tier
+  // Enhance uses Flash
   return executeOnCluster(async (ai) => {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -244,15 +226,23 @@ const runGeneration = async (config: ThumbnailConfig, modelOverride: ModelType):
     const parts: any[] = [];
 
     if (config.referenceImage) {
-      const matches = config.referenceImage.match(/^data:(.+);base64,(.+)$/);
-      if (matches && matches.length === 3) {
-        parts.push({
-          inlineData: {
-            mimeType: matches[1],
-            data: matches[2],
-          },
-        });
-        parts.push({ text: "Use this image as the composition reference. Upgrade visual fidelity to 8K." });
+      // Check if it's a URL or Base64
+      if (config.referenceImage.startsWith('http')) {
+         // It's a URL, we need to fetch it first or pass it if the model supported URLs (Gemini doesn't directly support URL parts for images usually, better to pass base64)
+         // Assuming the generator component converts everything to base64 before calling this service.
+         // If we happen to get a URL here, we'll try to add it as text context, but it's not ideal.
+         parts.push({ text: `Reference Image URL: ${config.referenceImage}` });
+      } else {
+          const matches = config.referenceImage.match(/^data:(.+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            parts.push({
+              inlineData: {
+                mimeType: matches[1],
+                data: matches[2],
+              },
+            });
+            parts.push({ text: "Use this image as the composition reference. Upgrade visual fidelity to 8K." });
+          }
       }
     }
     
@@ -272,8 +262,6 @@ const runGeneration = async (config: ThumbnailConfig, modelOverride: ModelType):
       tools.push({ googleSearch: {} }); 
       generationConfig.imageConfig.imageSize = "2K"; 
     }
-
-    console.log(`[Cluster] Request sent to ${modelName} via Node #${keyCursor}`);
 
     const response = await ai.models.generateContent({
       model: modelName,
@@ -303,9 +291,9 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
      return await runGeneration(config, config.model);
   } catch (e: any) {
      const msg = e.message || "";
-     // ATTEMPT 2: If Pro failed due to Auth/Billing/Quota, fallback to Flash
+     // ATTEMPT 2: Fallback to flash if Pro fails
      if (config.model === 'pro' && (msg.includes("403") || msg.includes("400") || msg.includes("API key"))) {
-         console.warn("⚠️ PRO MODEL FAILED (BILLING/AUTH). AUTO-DOWNGRADING TO FLASH FREE TIER. ⚠️");
+         console.warn("⚠️ PRO MODEL FAILED. AUTO-DOWNGRADING TO FLASH.");
          return await runGeneration(config, 'flash');
      }
      throw e;
