@@ -1,25 +1,31 @@
 import { GoogleGenAI } from "@google/genai";
-import { ThumbnailConfig, ThumbnailStyle } from "../types";
+import { ThumbnailConfig, ThumbnailStyle, ModelType } from "../types";
 
 // ==========================================
-// 🚀 NANO BANANA CLUSTER ENGINE (V6.0 - UNLIMITED)
+// 🚀 NANO BANANA CLUSTER ENGINE (V8.0 - BROKE MODE SUPPORT)
 // ==========================================
 // - Injected Community Keys (Instant Start)
 // - Deep Environment Scanning
-// - Auto-Healing Neural Mesh
+// - Smart Rate Limit Bypassing (Auto-Wait)
+// - Auto-Downgrade (Pro -> Flash) for Billing Errors
 // - Unlimited Throughput Load Balancer
 
 // 1. CLUSTER STATE
 let keyCursor = 0;
-const BLACKLIST_TIMEOUT = 1000 * 60 * 1; // Reduced to 1 Minute for faster cycling
+const BLACKLIST_TIMEOUT = 1000 * 60 * 1; 
 const failedKeys = new Map<string, number>();
+
+// Track global cooldown to update UI
+let globalCooldownEnd = 0;
+export const getCooldownStatus = (): number => {
+    const remaining = globalCooldownEnd - Date.now();
+    return remaining > 0 ? remaining : 0;
+};
 
 // 2. INTELLIGENT KEY INGESTION
 const getKeyPool = (): string[] => {
-  // DEEP SCAN: Check all possible environment locations for keys
-  // Added the specific user-provided key as a primary source
   const rawSources = [
-    "AIzaSyDtoJH6iCdc9zlm5dpmaqFt9CMrET5S0ag", // Primary Community Node
+    "AIzaSyDtoJH6iCdc9zlm5dpmaqFt9CMrET5S0ag", // Primary Node
     process.env.API_KEY,
     process.env.VITE_API_KEY,
     process.env.NEXT_PUBLIC_API_KEY,
@@ -27,28 +33,20 @@ const getKeyPool = (): string[] => {
     (import.meta as any).env?.API_KEY
   ];
 
-  // Combine all sources into one massive block
   const rawData = rawSources.filter(Boolean).join("\n");
 
-  if (!rawData.trim()) {
-      return [];
-  }
+  if (!rawData.trim()) return [];
   
-  // STRATEGY A: Google Key Regex (Strict & Accurate)
   const regex = /AIza[0-9A-Za-z-_]{35}/g;
   let foundKeys: string[] = rawData.match(regex) || [];
 
-  // STRATEGY B: Permissive Fallback
   if (foundKeys.length === 0) {
       foundKeys = rawData.split(/[\n,;\s]+/).filter(k => k.startsWith("AIza") && k.length >= 39);
   }
   
-  // Remove duplicates and blacklisted keys
   const uniqueKeys = Array.from(new Set(foundKeys));
   const activeKeys = uniqueKeys.filter(k => !isKeyBlacklisted(k));
 
-  // EMERGENCY AUTO-HEALING
-  // If we have keys but all are blacklisted, reset the blacklist immediately to prevent total lockout.
   if (uniqueKeys.length > 0 && activeKeys.length === 0) {
       console.warn("[Cluster] All nodes exhausted. Initiating Emergency Reset...");
       failedKeys.clear();
@@ -73,15 +71,11 @@ const blacklistKey = (key: string, reason: string) => {
   failedKeys.set(key, Date.now());
 };
 
-// 3. LOAD BALANCER
 const getNextNode = (): string => {
   const pool = getKeyPool();
-  
   if (pool.length === 0) {
-    throw new Error("CLUSTER_OFFLINE: No API Keys detected. Please add 'AIza...' keys to your API_KEY environment variable.");
+    throw new Error("CLUSTER_OFFLINE: No API Keys detected.");
   }
-
-  // Round Robin Selection
   const key = pool[keyCursor % pool.length];
   keyCursor++;
   return key;
@@ -105,8 +99,8 @@ const executeOnCluster = async <T>(
   description: string
 ): Promise<T> => {
   const poolSize = getKeyPool().length;
-  // ROBUSTNESS UPGRADE: Increased minimum retries to 5 to handle single-key rate limits gracefully
-  const maxRetries = Math.max(5, Math.min(poolSize * 3, 15)); 
+  // If we only have 1 key, we must be patient. If many, we can fail fast and rotate.
+  const maxRetries = poolSize === 1 ? 8 : Math.max(5, Math.min(poolSize * 3, 15)); 
 
   let lastError: any = null;
 
@@ -124,26 +118,55 @@ const executeOnCluster = async <T>(
       const isQuotaError = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED");
       const isServerOverload = msg.includes("503") || msg.includes("500") || msg.includes("overloaded");
 
-      if (isAuthError || isQuotaError || isServerOverload) {
-         if (currentKey) {
-             const reason = isAuthError ? "Auth Fail" : isQuotaError ? "Quota Limit" : "Server Error";
-             // Only blacklist on hard auth errors, soften the blow for quota
-             if (isAuthError) blacklistKey(currentKey, reason);
-             else console.warn(`[Cluster] Node Busy (${reason}). Retrying...`);
+      // SMART RATE LIMIT BYPASS
+      const retryMatch = msg.match(/retry in (\d+(\.\d+)?)s/);
+      
+      if (retryMatch || isQuotaError) {
+         let waitTime = 2000; 
+         if (retryMatch) {
+             waitTime = parseFloat(retryMatch[1]) * 1000 + 1000; 
+         } else {
+             waitTime = attempt * 2000;
+         }
+
+         console.warn(`[Cluster] Rate Limit Hit via Node ${currentKey.substring(0,6)}... Cooling down for ${(waitTime/1000).toFixed(1)}s`);
+         
+         globalCooldownEnd = Date.now() + waitTime;
+         
+         await new Promise(resolve => setTimeout(resolve, waitTime));
+         
+         if (poolSize > 1) {
+             continue; // Rotate
+         } else {
+             attempt--; // Don't count waiting as a failed attempt for single key
+             continue; // Retry same key
+         }
+      }
+
+      if (isAuthError) {
+         // CRITICAL FIX: Only blacklist if the key is explicitly invalid.
+         // A 403 on "Pro" model might just mean "No Billing", which is fine for "Flash".
+         if (msg.includes("API key not valid") || msg.includes("deleted") || msg.includes("project not found")) {
+             blacklistKey(currentKey, "Invalid Key");
+         } else {
+             console.warn(`[Cluster] Auth/Billing Error on Node ${currentKey.substring(0,8)}. Key retained for fallback.`);
          }
          
-         // Exponential Backoff for stability
-         const delay = attempt * 1000;
-         await new Promise(resolve => setTimeout(resolve, delay));
-         
-         continue; // Retry loop
+         // Throw immediately so we can trigger the model fallback logic in generateThumbnail
+         // instead of retrying the same broken model on other keys (which will also fail if user has no money)
+         throw error; 
+      }
+      
+      if (isServerOverload) {
+         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+         continue;
       }
       
       throw error; 
     }
   }
   
-  throw new Error(`Cluster Failed: ${description} could not be completed after ${maxRetries} attempts. Last error: ${lastError?.message || "Unknown"}`);
+  throw new Error(`Cluster Failed: ${description} could not be completed. Last error: ${lastError?.message || "Unknown"}`);
 };
 
 // ==========================================
@@ -166,21 +189,26 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
   if (getActiveNodeCount() === 0) return originalPrompt;
 
+  // Enhance uses Flash, so it should be safe on free tier
   return executeOnCluster(async (ai) => {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Enhance this Roblox GFX prompt for a PHOTOREALISTIC 3D RENDER in Blender/Unreal Engine 5: "${originalPrompt}"`,
     });
     return response.text?.trim() || originalPrompt;
-  }, "Prompt Enhancement");
+  }, "Prompt Enhancement").catch(e => {
+      console.warn("Enhancement failed, returning original.", e);
+      return originalPrompt;
+  });
 };
 
-export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
-  return executeOnCluster(async (ai) => {
+const runGeneration = async (config: ThumbnailConfig, modelOverride: ModelType): Promise<string> => {
+    return executeOnCluster(async (ai) => {
     
-    const modelName = config.model === 'pro' 
-      ? 'gemini-3-pro-image-preview' // Pro (High Quality)
-      : 'gemini-2.5-flash-image';    // Flash (Fast / Nano Banana)
+    // Select Model
+    const modelName = modelOverride === 'pro' 
+      ? 'gemini-3-pro-image-preview' 
+      : 'gemini-2.5-flash-image';    
 
     const finalPrompt = `
       [TASK]
@@ -229,9 +257,9 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
 
     if (config.seed) (generationConfig as any).seed = config.seed; 
 
-    // Pro Model Capabilities - Search Enabled
+    // Pro Model Capabilities
     const tools: any[] = [];
-    if (config.model === 'pro') {
+    if (modelOverride === 'pro') {
       tools.push({ googleSearch: {} }); 
       generationConfig.imageConfig.imageSize = "2K"; 
     }
@@ -257,5 +285,20 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
 
     throw new Error("Render complete, but output was empty. Try a different prompt.");
 
-  }, "Image Generation");
+  }, `Image Gen (${modelOverride})`);
+}
+
+export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
+  // ATTEMPT 1: Try requested model
+  try {
+     return await runGeneration(config, config.model);
+  } catch (e: any) {
+     const msg = e.message || "";
+     // ATTEMPT 2: If Pro failed due to Auth/Billing/Quota, fallback to Flash
+     if (config.model === 'pro' && (msg.includes("403") || msg.includes("400") || msg.includes("API key"))) {
+         console.warn("⚠️ PRO MODEL FAILED (BILLING/AUTH). AUTO-DOWNGRADING TO FLASH FREE TIER. ⚠️");
+         return await runGeneration(config, 'flash');
+     }
+     throw e;
+  }
 };

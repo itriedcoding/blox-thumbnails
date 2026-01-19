@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generateThumbnail, enhancePrompt, getActiveNodeCount } from '../services/geminiService';
+import { generateThumbnail, enhancePrompt, getActiveNodeCount, getCooldownStatus } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
 import { ThumbnailConfig, ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, PromptTemplate } from '../types';
 import { ImageEditor } from './ImageEditor';
@@ -57,8 +57,24 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [isFetchingAvatar, setIsFetchingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorImage, setEditorImage] = useState<string | null>(null);
+  
+  const [cooldown, setCooldown] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Monitor cooldown status
+  useEffect(() => {
+    let interval: any;
+    if (isGenerating) {
+        interval = setInterval(() => {
+            const cd = getCooldownStatus();
+            setCooldown(Math.ceil(cd / 1000));
+        }, 500);
+    } else {
+        setCooldown(0);
+    }
+    return () => clearInterval(interval);
+  }, [isGenerating]);
 
   useEffect(() => {
     const saved = localStorage.getItem('bloxthumb_history');
@@ -93,7 +109,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setIsLoadingUrl(true);
     setError(null);
     try {
-        // Use proxy to avoid CORS errors
         const response = await fetch(`${CORS_PROXY}${imageUrl}`);
         if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
         
@@ -138,7 +153,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         setPrompt(enhanced);
     } catch (err: any) {
         console.warn("Enhancement failed, falling back to original prompt", err);
-        // Don't show error to user, just fail silently and let them generate
     } finally {
         setIsEnhancing(false);
     }
@@ -150,7 +164,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       return;
     }
     
-    // Safety check for keys
     if (getActiveNodeCount() === 0) {
         setError("SYSTEM ERROR: No Active API Keys. Please add 'AIza...' keys to your environment variables.");
         return;
@@ -162,13 +175,11 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setEditorImage(null);
 
     const activeNodes = getActiveNodeCount();
-    // Intelligent Parallelism: Only parallelize if we have enough keys or if user requested small batch
     const runParallel = activeNodes > 1 || batchSize <= 2;
 
     try {
         saveHistory(prompt);
         
-        // PARALLEL PROCESSING: Fire all requests at once if cluster allows
         if (runParallel) {
             const promises = Array.from({ length: batchSize }, (_, i) => {
                 const currentSeed = seed + i;
@@ -185,7 +196,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
             });
 
-            // Handle results as they come in to update progress
             let completed = 0;
             for (const p of promises) {
                 p.then(() => {
@@ -202,7 +212,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
             });
 
         } else {
-            // SEQUENTIAL FALLBACK (For single key usage)
             for (let i = 0; i < batchSize; i++) {
                 const currentSeed = seed + i;
                 const config: ThumbnailConfig = {
@@ -277,6 +286,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                             className={`px-6 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wide flex items-center gap-1 ${model === 'pro' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
                              Banana Pro (HD)
+                             <span className="ml-1 text-[8px] bg-red-500 text-white px-1 rounded uppercase">Billing</span>
                         </button>
                     </div>
                 </div>
@@ -439,14 +449,27 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         <span className="relative z-10 flex items-center justify-center gap-3">
                             {isGenerating ? (
                                 <>
-                                    <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    {batchSize > 1 ? `Parallel Processing (${Math.round(progress)}%)` : 'Rendering...'}
+                                    {cooldown > 0 ? (
+                                        <>
+                                            <span className="w-2 h-2 bg-yellow-500 rounded-full animate-ping"></span>
+                                            Cooling Down ({cooldown}s)
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            {batchSize > 1 ? `Parallel Processing (${Math.round(progress)}%)` : 'Rendering...'}
+                                        </>
+                                    )}
                                 </>
                             ) : `Generate ${batchSize > 1 ? `(${batchSize})` : ''}`}
                         </span>
                         {!isGenerating && <div className="absolute inset-0 bg-gradient-to-r from-neon-blue via-white to-neon-purple opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"></div>}
                         {isGenerating && (
                              <div className="absolute bottom-0 left-0 h-1 bg-neon-blue transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                        )}
+                        {/* Cooldown Progress Bar */}
+                        {isGenerating && cooldown > 0 && (
+                             <div className="absolute bottom-0 left-0 h-1 bg-yellow-500 transition-all duration-1000 w-full animate-pulse"></div>
                         )}
                      </button>
                      
