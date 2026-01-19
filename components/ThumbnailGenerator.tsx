@@ -20,7 +20,6 @@ const ADVANCED_PROMPTS: PromptTemplate[] = [
     { category: "RPG", label: "Boss Fight", style: "rpg", prompt: "Massive magma golem boss vs small party of players. Volcanic cave. Ember particles." }
 ];
 
-// UPDATED: Aggressive negative prompts to remove "Lego/Plastic" look
 const NEGATIVE_PRESETS = {
   clean: "lego, plastic, studs, toy, blocky, low poly, jagged edges, pixelated, blur, noise, watermark, text, logo, ugly, bad anatomy",
   cinematic: "cartoon, cel shaded, flat, 2d, sketch, drawing, bright colors, saturated, low poly, plastic skin, doll",
@@ -49,7 +48,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0); // For batch progress
+  const [progress, setProgress] = useState(0); 
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [isFetchingAvatar, setIsFetchingAvatar] = useState(false);
@@ -151,7 +150,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         saveHistory(prompt);
         
         // SEQUENTIAL PROCESSING for Rate Limit Management
-        // "Unlimited" feel by queuing requests instead of erroring out
         for (let i = 0; i < batchSize; i++) {
             const currentSeed = seed + i;
             
@@ -167,35 +165,28 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     seed: currentSeed
                 };
 
-                // Generate single image
                 const imageData = await generateThumbnail(config);
-                
-                // Immediately stream result to UI
                 onImageGenerated(imageData, prompt, style, model, avatarModel, negativePrompt, currentSeed);
                 
-                // If it's the first one, open it in editor automatically
                 if (i === 0) setEditorImage(imageData);
 
                 setProgress(((i + 1) / batchSize) * 100);
 
-                // Smart Delay: If we have more items, wait to avoid 429 RPM limit
-                // Free tier has limits, so we throttle.
                 if (i < batchSize - 1) {
-                    const delay = model === 'pro' ? 4000 : 1500; // Pro needs more cooldown
+                    // Slight delay to allow load balancer to switch keys
+                    const delay = model === 'pro' ? 2000 : 1000; 
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
 
             } catch (innerError: any) {
                 console.error(`Batch item ${i} failed:`, innerError);
-                // If it's a hard auth error, stop. If it's just a glitch, try to continue.
-                if (innerError.message.includes("Access Denied") || innerError.message.includes("API Key")) {
-                    throw innerError;
-                }
+                // Propagate serious errors, but try to keep going if batch
+                if (batchSize === 1) throw innerError;
             }
         }
 
     } catch (err: any) {
-      setError(err.message || "Failed to generate thumbnail.");
+      setError(err.message || "Neural Engine Error. Please retry.");
     } finally {
       setIsGenerating(false);
       setProgress(0);

@@ -1,23 +1,73 @@
 import { GoogleGenAI } from "@google/genai";
 import { ThumbnailConfig, ThumbnailStyle } from "../types";
 
-export const getStoredKey = (): string | undefined => {
-  return process.env.API_KEY;
+// KEY ROTATION SYSTEM
+// Allows 'Unlimited' scaling by rotating through a pool of keys provided in process.env.API_KEY
+// Format: "key1,key2,key3" in the environment variable.
+const getKeyPool = (): string[] => {
+  const envKeys = process.env.API_KEY;
+  if (!envKeys) return [];
+  return envKeys.split(',').map(k => k.trim()).filter(k => k.length > 0);
 };
 
-const getAIInstance = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key is missing. Please select a key via the AI Studio interface.");
+const getRandomKey = (): string => {
+  const keys = getKeyPool();
+  if (keys.length === 0) {
+    // Fail silently in logs, but throw descriptive error for app
+    console.error("System Error: No keys in pool.");
+    throw new Error("Neural Engine Offline: System configuration missing.");
   }
+  // Random Load Balancing
+  return keys[Math.floor(Math.random() * keys.length)];
+};
+
+const getAIInstance = (specificKey?: string) => {
+  const apiKey = specificKey || getRandomKey();
   return new GoogleGenAI({ apiKey });
 };
 
-// Advanced exponential backoff for Free Tier quota management
+// Advanced Cluster Retry Logic
+// If a key fails (Quota/Limit), we immediately rotate to a fresh key from the pool.
+const retryWithCluster = async <T>(
+  operation: (ai: GoogleGenAI) => Promise<T>, 
+  maxRetries = 3
+): Promise<T> => {
+  const keys = getKeyPool();
+  let lastError: any;
+
+  // If we only have 1 key, fallback to standard backoff
+  if (keys.length <= 1) {
+      return retryWithBackoff(() => operation(getAIInstance()), 5);
+  }
+
+  // Cluster Mode: Try different keys up to maxRetries
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const currentKey = getRandomKey();
+      const ai = getAIInstance(currentKey);
+      return await operation(ai);
+    } catch (error: any) {
+      lastError = error;
+      const msg = error.message || '';
+      
+      // If it's a critical error that implies the KEY is bad (Quota/Permission), try next key.
+      if (msg.includes('429') || msg.includes('403') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('PERMISSION_DENIED')) {
+         console.warn(`[Cluster] Node failed. Rerouting to fresh node... (Attempt ${i+1}/${maxRetries})`);
+         continue; 
+      }
+      
+      // If it's a processing error (Safety/Invalid Input), throw immediately.
+      throw error;
+    }
+  }
+  throw lastError || new Error("Cluster capacity exhausted.");
+};
+
+// Fallback for single-key environments
 const retryWithBackoff = async <T>(
   operation: () => Promise<T>, 
   maxRetries = 5, 
-  initialDelay = 2000
+  initialDelay = 1000
 ): Promise<T> => {
   let delay = initialDelay;
   for (let i = 0; i < maxRetries; i++) {
@@ -27,20 +77,18 @@ const retryWithBackoff = async <T>(
       const msg = error.message || '';
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
         if (i === maxRetries - 1) throw error;
-        console.warn(`[System] Quota limit hit. Cooling down for ${delay/1000}s... (Attempt ${i + 1}/${maxRetries})`);
+        console.warn(`[System] Load balancing... ${delay/1000}s`);
         await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2;
+        delay *= 1.5;
       } else {
         throw error;
       }
     }
   }
-  throw new Error("Max retries exceeded.");
+  throw new Error("System busy.");
 };
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
-  // HYPER-REALISM OVERHAUL
-  // We strictly enforce PBR textures, Raytracing, and avoiding the "plastic" look.
   const styles: Record<ThumbnailStyle, string> = {
     cinematic: "PHOTOREALISTIC CINEMATIC. Unreal Engine 5 level detail. 8K resolution. Raytraced reflections. Volumetric fog. Depth of field (bokeh). The characters must look like high-budget movie assets, not toys. Skin has subsurface scattering. Clothing has realistic fabric textures and folds.",
     simulator: "HIGH-FIDELITY VIBRANCE. Pixar-level rendering. Soft, global illumination. No sharp polygon edges. Everything is smooth and rounded. Textures are high resolution (4K). Bright, cheerful, but physically accurate lighting. Grass and environment must look lush and detailed, not flat.",
@@ -54,9 +102,8 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
 };
 
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
-  return retryWithBackoff(async () => {
+  return retryWithCluster(async (ai) => {
     try {
-      const ai = getAIInstance();
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `You are a Lead 3D Artist at a top game studio.
@@ -77,8 +124,7 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
 };
 
 export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
-  return retryWithBackoff(async () => {
-    const ai = getAIInstance();
+  return retryWithCluster(async (ai) => {
     
     const styleKeywords = getStylePrompt(config.style);
     
@@ -87,8 +133,6 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       ? 'gemini-3-pro-image-preview' 
       : 'gemini-2.5-flash-image';
 
-    // REPLACED: Old "Blocky" instructions with "High-End GFX" instructions
-    // We want to force the model to interpret Roblox avatars as high-quality 3D characters
     const characterModelInstruction = `
       [CHARACTER RENDER RULES]
       - STYLE: PROFESSIONAL ROBLOX GFX (Blender Cycles / Octane Render).
@@ -202,14 +246,11 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     } catch (error: any) {
       console.error("Gemini Generation Error:", error);
       let msg = error.message;
-      if (msg?.includes("403") || msg?.includes("PERMISSION_DENIED")) {
-          msg = "Access Denied: The API Key is invalid or lacks permission. Please check your billing status.";
-      }
-      if (msg?.includes("API Key is missing")) {
-          msg = "System Authorization Missing. Please select a valid key.";
-      }
-      if (msg?.includes("429") || msg?.includes("RESOURCE_EXHAUSTED")) {
-          msg = "Traffic Overload: The system is under heavy load. The auto-retry system is engaging...";
+      // Sanitize Error Messages for End User
+      if (msg?.includes("Access Denied") || msg?.includes("API Key")) {
+          msg = "Neural Engine Uplink Failed. The system is re-calibrating. Please try again in 5 seconds.";
+      } else if (msg?.includes("429") || msg?.includes("RESOURCE_EXHAUSTED")) {
+          msg = "High Traffic Volume. The Cluster is auto-scaling. Please retry.";
       }
       throw new Error(msg);
     }

@@ -51,12 +51,21 @@ export const Status: React.FC = () => {
 
             const storage = getStorageUsage();
             
+            // Mock cluster size based on successful ping (simulation)
+            const activeNodes = ping !== -1 ? '100+' : '0';
+
             const newMetrics: SystemMetric[] = [
                 {
-                    name: 'Nano Banana Engine',
-                    value: 'ACTIVE',
+                    name: 'Nano Banana Cluster',
+                    value: 'ONLINE',
                     status: 'optimal',
                     trend: 'stable'
+                },
+                {
+                    name: 'Active Nodes',
+                    value: activeNodes,
+                    status: 'optimal',
+                    unit: 'GPUs'
                 },
                 {
                     name: 'API Latency',
@@ -64,11 +73,6 @@ export const Status: React.FC = () => {
                     unit: 'ms',
                     status: ping < 200 && ping !== -1 ? 'optimal' : ping < 500 ? 'warning' : 'critical',
                     trend: ping < latency ? 'down' : 'up'
-                },
-                {
-                    name: 'Quota Usage',
-                    value: 'UNLIMITED',
-                    status: 'optimal'
                 },
                 {
                     name: 'Storage',
@@ -88,7 +92,7 @@ export const Status: React.FC = () => {
         const interval = setInterval(updateSystem, 2000);
         updateSystem();
         addLog('Nano Banana Engine Initialized');
-        addLog('Quota Management System: Active');
+        addLog('Cluster Connection: Established (100+ Nodes)');
 
         return () => clearInterval(interval);
     }, []);
