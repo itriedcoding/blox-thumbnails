@@ -1,8 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 import { ThumbnailConfig, ThumbnailStyle } from "../types";
 
+export const getStoredKey = (): string | undefined => {
+  // Priority: Local Storage -> Environment Variable -> undefined
+  return localStorage.getItem('gemini_api_key') || process.env.API_KEY;
+};
+
 const getAIInstance = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getStoredKey();
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please complete the system setup.");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
@@ -19,8 +28,8 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
 };
 
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
-  const ai = getAIInstance();
   try {
+    const ai = getAIInstance();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `You are an expert Roblox GFX artist. 
@@ -48,12 +57,12 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     ? 'gemini-3-pro-image-preview' 
     : 'gemini-2.5-flash-image';
 
-  // Strict Avatar Instructions - Enforce Roblox aesthetic based on R15/Rthro toggle
+  // Strict Avatar Instructions
   const characterModelInstruction = config.avatarModel === 'Rthro'
     ? "CHARACTER REQUIREMENT: ROBLOX RTHRO (REALISTIC) AVATAR. The character MUST have 'Rthro' proportions: taller, thinner, more realistic human-like joints and scaling, NOT blocky. Smooth limbs, detailed clothing mapping. Matches the 'Rthro' package style in Roblox."
     : "CHARACTER REQUIREMENT: ROBLOX R15 (BLOCKY) AVATAR. The character MUST have classic blocky proportions. Rectangular torso (1.0 or 2.0 package), separate cylindrical/blocky limb segments. Distinct shoulder, elbow, hip, and knee joints. NO realistic human proportions. It must look like a plastic toy/figure.";
 
-  // The Master Prompt - Forces everything to be Roblox related
+  // The Master Prompt
   const finalPrompt = `
     [STRICT CONSTRAINT: ROBLOX ONLY]
     This image MUST be a 3D render of a Roblox Game Scene.
@@ -163,7 +172,10 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     console.error("Gemini Generation Error:", error);
     let msg = error.message;
     if (msg?.includes("403") || msg?.includes("PERMISSION_DENIED")) {
-        msg = "API Key Error: Please ensure you are using a valid key from a paid project.";
+        msg = "Access Denied: The API Key is invalid or lacks permission. Please check your billing status.";
+    }
+    if (msg?.includes("API Key is missing")) {
+        msg = "System Authorization Missing. Please configure the API Key in Settings.";
     }
     throw new Error(msg);
   }
