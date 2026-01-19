@@ -20,7 +20,7 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
             {/* Left Content */}
             <div className="flex flex-col items-start text-left animate-fade-in-up">
                 
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-10 hover:bg-white/10 transition-all cursor-default group">
+                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-10 hover:bg-white/10 transition-all cursor-default group hover:border-neon-green/30">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
@@ -30,10 +30,13 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                 
                 <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.9] font-sans drop-shadow-2xl">
                   RENDER <br/>
-                  <span className="text-gradient-secondary animate-glow">REALITY</span>
+                  <span className="text-gradient-secondary animate-glow relative inline-block">
+                    REALITY
+                    <span className="absolute inset-0 bg-white/20 blur-xl opacity-0 hover:opacity-100 transition-opacity"></span>
+                  </span>
                 </h1>
                 
-                <p className="text-xl md:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-light border-l-2 border-neon-blue/30 pl-6">
+                <p className="text-xl md:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-light border-l-2 border-neon-blue/30 pl-6 backdrop-blur-sm">
                   The world's most advanced <strong className="text-white">Roblox GFX AI</strong>. 
                   Generate viral, ray-traced thumbnails in seconds. No Blender required.
                 </p>
@@ -60,18 +63,18 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
 
                 {/* Mini Stats */}
                 <div className="mt-16 flex items-center gap-12 text-slate-500 font-mono text-sm">
-                    <div className="flex items-center gap-2">
-                        <span className="text-neon-blue">●</span> 1.5M+ Renders
+                    <div className="flex items-center gap-2 group cursor-default">
+                        <span className="text-neon-blue group-hover:animate-ping">●</span> 1.5M+ Renders
                     </div>
-                    <div className="flex items-center gap-2">
-                         <span className="text-neon-purple">●</span> 4K Export
+                    <div className="flex items-center gap-2 group cursor-default">
+                         <span className="text-neon-purple group-hover:animate-ping">●</span> 4K Export
                     </div>
                 </div>
             </div>
 
             {/* Right Visual - Abstract UI Representation */}
             <div className="hidden lg:block relative h-[600px] w-full perspective-container animate-fade-in-up delay-200">
-                <div className="absolute inset-0 bg-gradient-to-tr from-neon-blue/10 to-neon-purple/10 rounded-3xl border border-white/10 backdrop-blur-sm transform rotateY(-10deg) rotateX(5deg) hover:rotateY(0deg) hover:rotateX(0deg) transition-transform duration-700 ease-out shadow-2xl p-6 flex flex-col">
+                <div className="absolute inset-0 bg-gradient-to-tr from-neon-blue/10 to-neon-purple/10 rounded-3xl border border-white/10 backdrop-blur-sm transform rotateY(-10deg) rotateX(5deg) hover:rotateY(0deg) hover:rotateX(0deg) transition-transform duration-700 ease-out shadow-2xl p-6 flex flex-col group">
                     {/* Fake UI Header */}
                     <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
                         <div className="flex gap-2">
@@ -79,20 +82,22 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                             <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
                             <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
                         </div>
-                        <div className="h-2 w-20 bg-white/10 rounded-full"></div>
+                        <div className="h-2 w-20 bg-white/10 rounded-full group-hover:w-32 transition-all duration-500"></div>
                     </div>
                     {/* Fake UI Body */}
                     <div className="flex-1 grid grid-cols-2 gap-4">
-                        <div className="bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group">
-                             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group/item">
+                             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-50 group-hover/item:opacity-100 transition-opacity"></div>
+                             <div className="absolute bottom-4 left-4 h-2 w-1/2 bg-white/20 rounded"></div>
+                             {/* Abstract Cube */}
+                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 border border-white/20 rotate-45 group-hover/item:rotate-90 transition-transform duration-700"></div>
+                        </div>
+                        <div className="bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group/item">
+                             <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 opacity-50 group-hover/item:opacity-100 transition-opacity"></div>
                              <div className="absolute bottom-4 left-4 h-2 w-1/2 bg-white/20 rounded"></div>
                         </div>
-                        <div className="bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group">
-                             <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                             <div className="absolute bottom-4 left-4 h-2 w-1/2 bg-white/20 rounded"></div>
-                        </div>
-                        <div className="col-span-2 bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group flex items-center justify-center">
-                             <div className="text-6xl animate-pulse grayscale group-hover:grayscale-0 transition-all">🚀</div>
+                        <div className="col-span-2 bg-black/40 rounded-xl border border-white/5 relative overflow-hidden group/item flex items-center justify-center">
+                             <div className="text-6xl animate-pulse grayscale group-hover/item:grayscale-0 transition-all duration-500 hover:scale-110 cursor-pointer">🚀</div>
                         </div>
                     </div>
                 </div>

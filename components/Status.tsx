@@ -12,6 +12,7 @@ export const Status: React.FC = () => {
     const [metrics, setMetrics] = useState<SystemMetric[]>([]);
     const [logs, setLogs] = useState<string[]>([]);
     const [latency, setLatency] = useState<number>(0);
+    const [latencyHistory, setLatencyHistory] = useState<number[]>(new Array(20).fill(50));
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
     const addLog = (msg: string) => {
@@ -45,6 +46,11 @@ export const Status: React.FC = () => {
             const ping = await checkConnectivity();
             setLatency(ping);
             
+            // Update Graph Data
+            if (ping !== -1) {
+                setLatencyHistory(prev => [...prev.slice(1), ping]);
+            }
+
             const storage = getStorageUsage();
             const memory = (performance as any).memory ? Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024) : 0;
             
@@ -108,7 +114,7 @@ export const Status: React.FC = () => {
                         <h2 className="text-4xl font-black text-white tracking-tighter uppercase font-mono">System Status</h2>
                     </div>
                     <p className="text-slate-500 font-mono text-xs tracking-widest">
-                        REAL-TIME DIAGNOSTICS // V2.0.4 BUILD
+                        REAL-TIME DIAGNOSTICS // V2.0.5 BUILD
                     </p>
                 </div>
                 <div className="text-right">
@@ -119,7 +125,7 @@ export const Status: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 {metrics.map((m, i) => (
-                    <div key={i} className="bg-black/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden group">
+                    <div key={i} className="bg-black/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-colors">
                         <div className={`absolute top-0 left-0 w-1 h-full ${m.status === 'optimal' ? 'bg-neon-green' : m.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                         <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">{m.name}</h3>
                         <div className="flex items-end gap-2">
@@ -137,16 +143,32 @@ export const Status: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-[#05050a] border border-white/10 rounded-3xl p-8 relative overflow-hidden">
+                {/* Network Operations Center & Graph */}
+                <div className="lg:col-span-2 bg-[#05050a] border border-white/10 rounded-3xl p-8 relative overflow-hidden flex flex-col">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-blue to-purple-600"></div>
-                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-neon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
-                        Network Operations Center
-                    </h3>
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <svg className="w-5 h-5 text-neon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
+                            Network Latency Stream
+                        </h3>
+                        <span className="text-xs text-neon-green animate-pulse">LIVE FEED</span>
+                    </div>
+                    
+                    {/* Visual Graph */}
+                    <div className="h-32 flex items-end justify-between gap-1 mb-8 border-b border-white/5 pb-4 px-2">
+                        {latencyHistory.map((val, idx) => (
+                            <div 
+                                key={idx} 
+                                className="w-full bg-gradient-to-t from-neon-blue/20 to-neon-blue/80 rounded-t-sm transition-all duration-500"
+                                style={{ height: `${Math.min((val / 500) * 100, 100)}%` }}
+                            ></div>
+                        ))}
+                    </div>
+
                     <div className="space-y-4">
                         <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
                             <div className="flex items-center gap-4">
-                                <div className="w-2 h-2 rounded-full bg-neon-green"></div>
+                                <div className="w-2 h-2 rounded-full bg-neon-green shadow-[0_0_10px_rgba(10,255,10,0.5)]"></div>
                                 <div>
                                     <div className="text-sm font-bold text-white">Roblox Avatar API</div>
                                     <div className="text-xs text-slate-500">users.roblox.com via Proxy</div>
@@ -156,7 +178,7 @@ export const Status: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
                             <div className="flex items-center gap-4">
-                                <div className="w-2 h-2 rounded-full bg-neon-green"></div>
+                                <div className="w-2 h-2 rounded-full bg-neon-green shadow-[0_0_10px_rgba(10,255,10,0.5)]"></div>
                                 <div>
                                     <div className="text-sm font-bold text-white">Gemini Inference Engine</div>
                                     <div className="text-xs text-slate-500">generativelanguage.googleapis.com</div>
@@ -166,7 +188,7 @@ export const Status: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
                             <div className="flex items-center gap-4">
-                                <div className="w-2 h-2 rounded-full bg-neon-blue"></div>
+                                <div className="w-2 h-2 rounded-full bg-neon-blue shadow-[0_0_10px_rgba(0,243,255,0.5)]"></div>
                                 <div>
                                     <div className="text-sm font-bold text-white">Asset Delivery Network</div>
                                     <div className="text-xs text-slate-500">thumbnails.roblox.com</div>
@@ -179,9 +201,9 @@ export const Status: React.FC = () => {
 
                 <div className="bg-black border border-white/10 rounded-3xl p-8 font-mono text-xs overflow-hidden flex flex-col">
                     <h3 className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest border-b border-white/5 pb-2">System Logs</h3>
-                    <div className="flex-1 overflow-y-auto space-y-2 max-h-[300px] text-slate-300">
+                    <div className="flex-1 overflow-y-auto space-y-2 max-h-[400px] text-slate-300 scrollbar-thin scrollbar-thumb-white/10">
                         {logs.map((log, i) => (
-                            <div key={i} className="break-all opacity-80 hover:opacity-100 hover:text-neon-blue transition-colors cursor-default">
+                            <div key={i} className="break-all opacity-80 hover:opacity-100 hover:text-neon-blue transition-colors cursor-default border-l-2 border-transparent hover:border-neon-blue pl-2">
                                 <span className="text-slate-600 mr-2">{'>'}</span>{log}
                             </div>
                         ))}

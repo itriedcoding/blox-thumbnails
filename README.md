@@ -19,7 +19,7 @@ An advanced AI-powered web application that generates high-quality 3D Roblox gam
 
 1.  Click the **Deploy** button above.
 2.  Import your Git repository.
-3.  Deploy! (Configuration is automatic based on codebase).
+3.  Deploy!
 
 ## Local Development
 
