@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generateThumbnail, enhancePrompt } from '../services/geminiService';
+import { generateThumbnail, enhancePrompt, getActiveNodeCount } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
 import { ThumbnailConfig, ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, PromptTemplate } from '../types';
 import { ImageEditor } from './ImageEditor';
@@ -44,7 +44,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
-  const [avatarModel, setAvatarModel] = useState<AvatarModel>('Rthro'); // Default to Rthro for more realism
+  const [avatarModel, setAvatarModel] = useState<AvatarModel>('Rthro'); 
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -130,7 +130,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         const enhanced = await enhancePrompt(prompt);
         setPrompt(enhanced);
     } catch (err) {
-        setError("Failed to enhance prompt.");
+        setError("Failed to enhance prompt. Check Cluster connection.");
     } finally {
         setIsEnhancing(false);
     }
@@ -146,14 +146,51 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setError(null);
     setEditorImage(null);
 
+    const activeNodes = getActiveNodeCount();
+    // Intelligent Parallelism: Only parallelize if we have enough keys or if user requested small batch
+    const runParallel = activeNodes > 1 || batchSize <= 2;
+
     try {
         saveHistory(prompt);
         
-        // SEQUENTIAL PROCESSING for Rate Limit Management
-        for (let i = 0; i < batchSize; i++) {
-            const currentSeed = seed + i;
+        // PARALLEL PROCESSING: Fire all requests at once if cluster allows
+        if (runParallel) {
+            const promises = Array.from({ length: batchSize }, (_, i) => {
+                const currentSeed = seed + i;
+                const config: ThumbnailConfig = {
+                    prompt,
+                    negativePrompt: negativePrompt || undefined,
+                    referenceImage: referenceImage || undefined,
+                    aspectRatio,
+                    style,
+                    model,
+                    avatarModel,
+                    seed: currentSeed
+                };
+                return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
+            });
+
+            // Handle results as they come in to update progress
+            let completed = 0;
+            for (const p of promises) {
+                // Wait for individual promises just to track progress, but they run concurrently
+                p.then(() => {
+                    completed++;
+                    setProgress((completed / batchSize) * 100);
+                }).catch(() => {}); 
+            }
+
+            const results = await Promise.all(promises);
             
-            try {
+            results.forEach((res, i) => {
+                 onImageGenerated(res.data, prompt, style, model, avatarModel, negativePrompt, res.seed);
+                 if (i === 0) setEditorImage(res.data);
+            });
+
+        } else {
+            // SEQUENTIAL FALLBACK (For single key usage)
+            for (let i = 0; i < batchSize; i++) {
+                const currentSeed = seed + i;
                 const config: ThumbnailConfig = {
                     prompt,
                     negativePrompt: negativePrompt || undefined,
@@ -167,26 +204,14 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
 
                 const imageData = await generateThumbnail(config);
                 onImageGenerated(imageData, prompt, style, model, avatarModel, negativePrompt, currentSeed);
-                
                 if (i === 0) setEditorImage(imageData);
-
                 setProgress(((i + 1) / batchSize) * 100);
-
-                if (i < batchSize - 1) {
-                    // Slight delay to allow load balancer to switch keys
-                    const delay = model === 'pro' ? 2000 : 1000; 
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-
-            } catch (innerError: any) {
-                console.error(`Batch item ${i} failed:`, innerError);
-                // Propagate serious errors, but try to keep going if batch
-                if (batchSize === 1) throw innerError;
             }
         }
 
     } catch (err: any) {
-      setError(err.message || "Neural Engine Error. Please retry.");
+      console.error(err);
+      setError(err.message || "Cluster Engine Error. Nodes might be saturated.");
     } finally {
       setIsGenerating(false);
       setProgress(0);
@@ -295,7 +320,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-bold mb-4 tracking-widest">Batch Size</label>
+                                <label className="block text-[10px] text-slate-500 uppercase font-bold mb-4 tracking-widest">Batch Size (Multi-Thread)</label>
                                 <div className="flex bg-black/50 rounded-xl p-1.5 border border-white/5">
                                     {[1, 2, 3, 4].map(n => (
                                         <button key={n} onClick={() => setBatchSize(n)} className={`flex-1 py-3 rounded-lg text-[10px] font-bold transition-all ${batchSize === n ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>{n}</button>
@@ -401,7 +426,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                             {isGenerating ? (
                                 <>
                                     <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    {batchSize > 1 ? `Batch Processing (${Math.round(progress)}%)` : 'Rendering...'}
+                                    {batchSize > 1 ? `Parallel Processing (${Math.round(progress)}%)` : 'Rendering...'}
                                 </>
                             ) : `Generate ${batchSize > 1 ? `(${batchSize})` : ''}`}
                         </span>

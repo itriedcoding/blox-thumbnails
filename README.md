@@ -1,4 +1,4 @@
-# Blox Thumbnails
+# BloxThumb 3D - Roblox Thumbnail Generator
 
 An advanced AI-powered web application that generates high-quality 3D Roblox game thumbnails using Google's Gemini 3 Pro model.
 

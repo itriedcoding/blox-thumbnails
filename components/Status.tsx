@@ -32,9 +32,9 @@ export const Status: React.FC = () => {
                     status: nodes > 50 ? 'optimal' : nodes > 0 ? 'warning' : 'critical'
                 },
                 {
-                    name: 'Load Balancer',
-                    value: 'ROUND ROBIN',
-                    status: 'optimal'
+                    name: 'Concurrent Threads',
+                    value: nodes > 1 ? 'UNLIMITED' : '1',
+                    status: nodes > 1 ? 'optimal' : 'warning'
                 },
                 {
                     name: 'Local Storage',
@@ -57,7 +57,7 @@ export const Status: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {metrics.map((m, i) => (
                     <div key={i} className="bg-black/40 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.status === 'optimal' ? 'bg-neon-green' : 'bg-red-500'}`}></div>
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.status === 'optimal' ? 'bg-neon-green' : m.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                         <h3 className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-2">{m.name}</h3>
                         <div className="flex items-end gap-2">
                             <span className="text-3xl font-mono font-bold text-white">{m.value}</span>
@@ -74,11 +74,11 @@ export const Status: React.FC = () => {
                     <span className="text-white font-bold uppercase tracking-widest">Nano Banana Cluster Log</span>
                 </div>
                 <div className="font-mono text-xs text-slate-400 space-y-2">
-                    <p>{'>'} Initializing Neural Cluster...</p>
-                    <p>{'>'} Loaded {activeNodes} API Keys from Environment...</p>
-                    <p>{'>'} Load Balancer: Active</p>
-                    <p>{'>'} Failover Protection: Enabled</p>
-                    <p className="text-neon-blue">{'>'} SYSTEM READY FOR UNLIMITED GENERATION</p>
+                    <p>{'>'} Initializing Neural Cluster V4.0...</p>
+                    <p>{'>'} Detected {activeNodes} API Keys in Environment...</p>
+                    {activeNodes > 1 && <p className="text-neon-blue">{'>'} PARALLEL PROCESSING ENABLED (Fast Mode Active)</p>}
+                    <p>{'>'} Failover Protection: Active</p>
+                    <p>{'>'} SYSTEM READY</p>
                 </div>
             </div>
         </div>

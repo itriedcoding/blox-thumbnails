@@ -2,69 +2,72 @@ import { GoogleGenAI } from "@google/genai";
 import { ThumbnailConfig, ThumbnailStyle } from "../types";
 
 // ==========================================
-// 🚀 NANO BANANA CLUSTER ENGINE (V3.0)
+// 🚀 NANO BANANA CLUSTER ENGINE (V4.0 - UNLIMITED)
 // ==========================================
-// This engine manages a pool of 100+ API Keys to provide unlimited throughput.
-// It automatically handles rate limits, load balancing, and failover.
+// - Supports 100+ Keys via Environment Variable
+// - Smart Key Extraction (Regex based)
+// - Auto-Healing Blacklist
+// - Round-Robin Load Balancing
 
 // 1. CLUSTER STATE
 let keyCursor = 0;
-const BLACKLIST_TIMEOUT = 1000 * 60 * 5; // 5 Minutes
+const BLACKLIST_TIMEOUT = 1000 * 60 * 2; // Reduced to 2 minutes for faster recovery
 const failedKeys = new Map<string, number>();
 
-// 2. KEY INGESTION
+// 2. INTELLIGENT KEY INGESTION
 const getKeyPool = (): string[] => {
-  // Parsing logic for massive key lists (Comma, Newline, or Semicolon separated)
   const rawData = process.env.API_KEY || "";
-  const candidates = rawData.split(/[\n,;]+/).map(k => k.trim());
   
-  // Strict Validation: Only accept keys that look like Google API Keys
-  const validKeys = candidates.filter(k => 
-    k.startsWith("AIza") && 
-    k.length > 35 && 
-    !isKeyBlacklisted(k)
-  );
+  // V4 UPGRADE: Smart Extraction
+  // Instead of just splitting, we look for patterns that resemble Google API Keys (AIza...)
+  // This allows the user to paste a messy file or list and we still find the keys.
+  const regex = /AIza[0-9A-Za-z-_]{35}/g;
+  const foundKeys = rawData.match(regex) || [];
+  
+  // Filter out blacklisted keys
+  const activeKeys = foundKeys.filter(k => !isKeyBlacklisted(k));
 
-  return validKeys;
+  // Auto-Healing: If we have keys but all are blacklisted, reset the blacklist immediately.
+  // This prevents a total system lockup if the API has a momentary hiccup.
+  if (foundKeys.length > 0 && activeKeys.length === 0) {
+      console.warn("[Cluster] All nodes exhausted. Initiating Emergency Reset...");
+      failedKeys.clear();
+      return foundKeys;
+  }
+
+  return activeKeys;
 };
 
 const isKeyBlacklisted = (key: string): boolean => {
   if (!failedKeys.has(key)) return false;
   const timestamp = failedKeys.get(key) || 0;
   if (Date.now() - timestamp > BLACKLIST_TIMEOUT) {
-    failedKeys.delete(key); // Release key back to pool
+    failedKeys.delete(key); 
     return false;
   }
   return true;
 };
 
-const blacklistKey = (key: string) => {
-  console.warn(`[Cluster] Node Blacklisted due to instability: ${key.substring(0, 8)}...`);
+const blacklistKey = (key: string, reason: string) => {
+  console.warn(`[Cluster] Node Blacklisted (${reason}): ${key.substring(0, 8)}...`);
   failedKeys.set(key, Date.now());
 };
 
-// 3. LOAD BALANCER (ROUND ROBIN)
+// 3. LOAD BALANCER
 const getNextNode = (): string => {
   const pool = getKeyPool();
-  
   if (pool.length === 0) {
-    // If all keys are blacklisted or missing, throw critical
-    if (process.env.API_KEY && failedKeys.size > 0) {
-       // Emergency reset if we ran out of keys
-       failedKeys.clear();
-       return getNextNode();
-    }
-    throw new Error("CLUSTER_OFFLINE: No active nodes available. Please configure API_KEY.");
+    throw new Error("CLUSTER_OFFLINE: No active nodes found in process.env.API_KEY. Please inject valid AIza keys.");
   }
-
-  // Round Robin Selection
   const key = pool[keyCursor % pool.length];
   keyCursor++;
   return key;
 };
 
 export const getActiveNodeCount = (): number => {
-  return getKeyPool().length;
+  const rawData = process.env.API_KEY || "";
+  const regex = /AIza[0-9A-Za-z-_]{35}/g;
+  return (rawData.match(regex) || []).length;
 };
 
 const getAIInstance = (specificKey?: string) => {
@@ -81,8 +84,8 @@ const executeOnCluster = async <T>(
   description: string
 ): Promise<T> => {
   const poolSize = getKeyPool().length;
-  // If we have 100 keys, we can retry many times. If 1 key, strict limits.
-  const maxRetries = Math.max(3, Math.min(poolSize, 10)); 
+  // Dynamic Retry Logic: More keys = More retries allowed
+  const maxRetries = Math.max(3, Math.min(poolSize, 12)); 
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     let currentKey = "";
@@ -92,49 +95,46 @@ const executeOnCluster = async <T>(
       return await operation(ai);
     } catch (error: any) {
       const msg = error.message || '';
+      
+      // Categorize Errors
       const isAuthError = msg.includes("403") || msg.includes("API key");
       const isQuotaError = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED");
-      const isServerError = msg.includes("503") || msg.includes("500");
+      const isServerOverload = msg.includes("503") || msg.includes("500") || msg.includes("overloaded");
 
-      if (isAuthError || isQuotaError || isServerError) {
-         console.warn(`[Cluster] Node Failure (${description}): ${msg}. Switching node...`);
-         
-         // If it's a hard failure (Quota/Auth), blacklist this specific key temporarily
-         if (currentKey) blacklistKey(currentKey);
-         
-         // Continue to next iteration (Next Key)
-         continue;
+      if (isAuthError || isQuotaError || isServerOverload) {
+         if (currentKey) blacklistKey(currentKey, isAuthError ? "Auth" : "Quota");
+         continue; // Auto-Retry with next key
       }
       
-      // If it's a prompt safety error or bad request, don't retry
-      throw error;
+      throw error; // Pass through application errors
     }
   }
-  throw new Error(`Cluster Busy: Unable to complete ${description} after ${maxRetries} node switches.`);
+  throw new Error(`Cluster Busy: ${description} failed after ${maxRetries} attempts. Nodes are saturated.`);
 };
 
 // ==========================================
-// PUBLIC METHODS
+// NANO BANANA GENERATION LOGIC
 // ==========================================
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
   const styles: Record<ThumbnailStyle, string> = {
-    cinematic: "PHOTOREALISTIC CINEMATIC. Unreal Engine 5 level detail. 8K resolution. Raytraced reflections. Volumetric fog. Depth of field (bokeh). The characters must look like high-budget movie assets, not toys. Skin has subsurface scattering. Clothing has realistic fabric textures and folds.",
-    simulator: "HIGH-FIDELITY VIBRANCE. Pixar-level rendering. Soft, global illumination. No sharp polygon edges. Everything is smooth and rounded. Textures are high resolution (4K). Bright, cheerful, but physically accurate lighting. Grass and environment must look lush and detailed, not flat.",
-    obby: "EXTREME DYNAMICS. Motion blur on edges. High contrast neon lighting against dark backgrounds. The character is performing a dynamic parkour move with realistic anatomy bending (no rigid block joints). Glowing textures with bloom. Reflections on surfaces.",
-    horror: "HYPER-REALISTIC HORROR. PBR materials: Rust, dirt, grime, blood, wet surfaces. Cinematic low-key lighting. The character looks genuinely terrified with detailed facial expressions. Volumetric smoke. Film grain. Chromatic aberration. Looks like a Resident Evil cutscene starring a stylized avatar.",
-    rpg: "FANTASY EPIC. Particle effects are volumetric and glowing. Armor looks like real metal with scratches and reflections. Magic effects cast real dynamic light on the environment. Atmospheric perspective. Majestic scale.",
-    anime: "HIGH-BUDGET ANIME 3D. Like a Arc System Works game (Guilty Gear Strive style). Cell-shaded but with dynamic lighting and rim lights. intense action lines. Glowing auras. The character model is stylized but high-poly, not blocky.",
-    "high-ctr": "VIRAL THUMBNAIL AESTHETIC. Maximum texture clarity. Exaggerated but high-quality lighting (Rim lights + Key light). The character pops out from the background. hyper-detailed facial expression. 3D rendered emojis/arrows with glossy textures."
+    cinematic: "PHOTOREALISTIC CINEMATIC. Unreal Engine 5. Nanite geometry. Lumen lighting. 8K textures. Depth of Field. Color Graded.",
+    simulator: "HIGH-FIDELITY VIBRANCE. Pixar-style rendering. Smooth shading. Ambient Occlusion. Bright, saturated colors. Soft shadows.",
+    obby: "NEON PARKOUR. High contrast. Emission shaders. Motion blur. Dynamic perspective. Glowing edges.",
+    horror: "REALISTIC HORROR. PBR materials (wet, dirt, grunge). Volumetric fog. Low-key lighting. Film grain.",
+    rpg: "FANTASY EPIC. Particle effects. Magic glows. Metallic reflections. Atmospheric perspective.",
+    anime: "GUILTY GEAR STRIVE STYLE. Cel-shaded 3D. Dynamic rim lighting. Action lines. Vibrant effects.",
+    "high-ctr": "YOUTUBE VIRAL. Hyper-saturated. Exaggerated expressions. High contrast. Glossy textures. 3D Emojis."
   };
   return styles[style] || styles.cinematic;
 };
 
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
   return executeOnCluster(async (ai) => {
+    // Nano Banana Text Model
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Reword this Roblox GFX prompt for maximum photorealism in Blender/Unreal Engine 5: "${originalPrompt}"`,
+      contents: `Enhance this Roblox GFX prompt for a PHOTOREALISTIC 3D RENDER in Blender/Unreal Engine 5: "${originalPrompt}"`,
     });
     return response.text?.trim() || originalPrompt;
   }, "Prompt Enhancement");
@@ -143,38 +143,31 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
 export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
   return executeOnCluster(async (ai) => {
     
-    const styleKeywords = getStylePrompt(config.style);
-    
-    // Pro Model for high fidelity, Flash for speed
+    // Nano Banana Image Models
     const modelName = config.model === 'pro' 
-      ? 'gemini-3-pro-image-preview' 
-      : 'gemini-2.5-flash-image';
+      ? 'gemini-3-pro-image-preview' // Pro (High Quality)
+      : 'gemini-2.5-flash-image';    // Flash (Fast / Nano Banana)
 
     const finalPrompt = `
-      [TASK: GENERATE HYPER-REALISTIC 3D ART]
-      Create a stunning 8K resolution 3D render.
-      The subject is a stylized character (Roblox-based) but rendered with PHOTOREALISM.
-
-      [SCENE DESCRIPTION]
-      ${config.prompt}
-
-      [VISUAL STYLE: ${config.style.toUpperCase()}]
-      ${styleKeywords}
+      [TASK]
+      Render a Hyper-Realistic 3D Roblox Game Thumbnail (8K Resolution).
       
-      [CHARACTER RULES]
-      - Use "BENT LIMBS" style (smooth joints, no blocky edges).
-      - Realistic fabric textures for clothing.
-      - Subsurface scattering for skin.
-      - High-emotion facial expression.
-
-      [TECHNICAL]
-      - Unreal Engine 5 render.
-      - Raytracing enabled.
-      - 8K Textures.
+      [SCENE]
+      ${config.prompt}
+      
+      [STYLE: ${config.style.toUpperCase()}]
+      ${getStylePrompt(config.style)}
+      
+      [TECHNICAL REQUIREMENTS]
+      - Engine: Unreal Engine 5 / Blender Cycles
+      - Lighting: Raytraced Global Illumination
+      - Avatar: ${config.avatarModel === 'Rthro' ? 'Realistic Rthro (Human proportions)' : 'High-Poly R15 (Rounded bevels)'}
+      - NO: Plastic toy look, studs, low-poly jagged edges, blur.
+      - YES: Subsurface scattering on skin, realistic fabric cloth simulation.
       
       [NEGATIVE PROMPT]
-      - ${config.negativePrompt || ""}
-      - plastic, toy, low poly, pixelated, blur, watermark, text
+      ${config.negativePrompt || ""}
+      low quality, jpeg artifacts, watermark, text overlay, ui, hud, pixelated
     `;
 
     const parts: any[] = [];
@@ -188,7 +181,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
             data: matches[2],
           },
         });
-        parts.push({ text: "Use this image as the character reference. Upgrade graphics to 8K photorealism." });
+        parts.push({ text: "Use this image as the composition reference. Upgrade visual fidelity to 8K." });
       }
     }
     
@@ -202,14 +195,14 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
 
     if (config.seed) (generationConfig as any).seed = config.seed; 
 
-    // Enable Google Search Tooling ONLY for Pro model
+    // Pro Model Capabilities
     const tools: any[] = [];
     if (config.model === 'pro') {
       tools.push({ googleSearch: {} }); 
       generationConfig.imageConfig.imageSize = "2K"; 
     }
 
-    console.log(`[Cluster] Job Dispatched to ${modelName} | Node #${keyCursor}`);
+    console.log(`[Cluster] Request sent to ${modelName} via Node #${keyCursor}`);
 
     const response = await ai.models.generateContent({
       model: modelName,
@@ -228,7 +221,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       }
     }
 
-    throw new Error("Render completed but no visual data returned.");
+    throw new Error("Render complete, but output was empty. Try a different prompt.");
 
   }, "Image Generation");
 };
