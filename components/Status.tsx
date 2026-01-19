@@ -74,9 +74,9 @@ export const Status: React.FC = () => {
                     <span className="text-white font-bold uppercase tracking-widest">Nano Banana Cluster Log</span>
                 </div>
                 <div className="font-mono text-xs text-slate-400 space-y-2">
-                    <p>{'>'} Initializing Neural Cluster V6.0...</p>
+                    <p>{'>'} Initializing Neural Cluster V8.1...</p>
                     <p>{'>'} Verified {activeNodes} API Keys...</p>
-                    <p className="text-neon-blue">{'>'} PRIMARY NODE INJECTED: AIza...0ag</p>
+                    <p className="text-neon-blue">{'>'} Environment Variables: LOADED</p>
                     <p>{'>'} Web Search Grounding: Active (Pro Model)</p>
                     <p>{'>'} Failover Protection: Active</p>
                     <p>{'>'} SYSTEM READY</p>

@@ -2,9 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import { ThumbnailConfig, ThumbnailStyle, ModelType } from "../types";
 
 // ==========================================
-// 🚀 NANO BANANA CLUSTER ENGINE (V8.0 - BROKE MODE SUPPORT)
+// 🚀 NANO BANANA CLUSTER ENGINE (V8.1 - SECURE MODE)
 // ==========================================
-// - Injected Community Keys (Instant Start)
+// - Secure Environment Variable Loading
 // - Deep Environment Scanning
 // - Smart Rate Limit Bypassing (Auto-Wait)
 // - Auto-Downgrade (Pro -> Flash) for Billing Errors
@@ -25,7 +25,7 @@ export const getCooldownStatus = (): number => {
 // 2. INTELLIGENT KEY INGESTION
 const getKeyPool = (): string[] => {
   const rawSources = [
-    "AIzaSyDtoJH6iCdc9zlm5dpmaqFt9CMrET5S0ag", // Primary Node
+    // SCANNED ENVIRONMENT VARIABLES
     process.env.API_KEY,
     process.env.VITE_API_KEY,
     process.env.NEXT_PUBLIC_API_KEY,
@@ -74,7 +74,7 @@ const blacklistKey = (key: string, reason: string) => {
 const getNextNode = (): string => {
   const pool = getKeyPool();
   if (pool.length === 0) {
-    throw new Error("CLUSTER_OFFLINE: No API Keys detected.");
+    throw new Error("CLUSTER_OFFLINE: No API Keys detected. Please set VITE_API_KEY in your .env file.");
   }
   const key = pool[keyCursor % pool.length];
   keyCursor++;
