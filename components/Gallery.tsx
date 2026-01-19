@@ -14,6 +14,29 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
     alert("Metadata copied!");
   };
 
+  const handleShare = async (img: GeneratedImage) => {
+      try {
+          const response = await fetch(img.data);
+          const blob = await response.blob();
+          const file = new File([blob], `bloxthumb-${img.id}.png`, { type: 'image/png' });
+
+          if (navigator.share && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                  title: 'My BloxThumb Render',
+                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}"`,
+                  files: [file]
+              });
+          } else {
+              // Fallback to Twitter Intent
+              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"`);
+              const url = encodeURIComponent("https://bloxthumb.com");
+              window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+          }
+      } catch (err) {
+          console.error("Share failed:", err);
+      }
+  };
+
   return (
     <div className="w-full mt-24 animate-fade-in-up delay-200">
       <div className="flex items-end justify-between mb-8 border-b border-white/5 pb-4">
@@ -45,8 +68,11 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
                     <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-400 font-mono uppercase bg-black/50 px-2 py-1 rounded backdrop-blur-sm">{img.style}</span>
                         <div className="flex gap-2">
-                             <button onClick={() => copyMeta(img)} className="bg-white/10 hover:bg-white text-white hover:text-black p-1.5 rounded-lg transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                             <a href={img.data} download={`bloxgen-${img.id}.png`} className="bg-neon-blue text-black p-1.5 rounded-lg hover:bg-white transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></a>
+                             <button onClick={() => handleShare(img)} title="Share" className="bg-white/10 hover:bg-neon-pink hover:text-white text-white p-1.5 rounded-lg transition-colors">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                             </button>
+                             <button onClick={() => copyMeta(img)} title="Copy Metadata" className="bg-white/10 hover:bg-white text-white hover:text-black p-1.5 rounded-lg transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                             <a href={img.data} download={`bloxgen-${img.id}.png`} title="Download" className="bg-neon-blue text-black p-1.5 rounded-lg hover:bg-white transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></a>
                         </div>
                     </div>
                 </div>

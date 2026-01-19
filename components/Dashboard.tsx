@@ -7,6 +7,29 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
+  const handleShare = async (img: GeneratedImage) => {
+      try {
+          const response = await fetch(img.data);
+          const blob = await response.blob();
+          const file = new File([blob], `bloxthumb-${img.id}.png`, { type: 'image/png' });
+
+          if (navigator.share && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                  title: 'My BloxThumb Render',
+                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}"`,
+                  files: [file]
+              });
+          } else {
+              // Fallback to Twitter Intent
+              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"`);
+              const url = encodeURIComponent("https://bloxthumb.com");
+              window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+          }
+      } catch (err) {
+          console.error("Share failed:", err);
+      }
+  };
+
   if (images.length === 0) {
       return (
           <div className="w-full min-h-[60vh] flex flex-col items-center justify-center animate-fade-in-up">
@@ -43,10 +66,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
                         
                         {/* Hover Actions */}
                         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                             <a href={img.data} download={`bloxgen-${img.id}.png`} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-white hover:text-black transition-colors">
+                             <button onClick={() => handleShare(img)} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-neon-pink transition-colors" title="Share">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                            </button>
+                             <a href={img.data} download={`bloxgen-${img.id}.png`} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-white hover:text-black transition-colors" title="Download">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </a>
-                            <button onClick={() => onDelete(img.id)} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-red-500 transition-colors">
+                            <button onClick={() => onDelete(img.id)} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-red-500 transition-colors" title="Delete">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>
