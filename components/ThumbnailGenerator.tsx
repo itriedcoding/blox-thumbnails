@@ -26,6 +26,9 @@ const NEGATIVE_PRESETS = {
   horror: "bright, happy, sunlight, cute, saturated, colorful, cartoon, funny, toy, plastic"
 };
 
+// CORS Proxy to bypass browser restrictions when loading external URLs
+const CORS_PROXY = "https://corsproxy.io/?";
+
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated }) => {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS.clean);
@@ -90,10 +93,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setIsLoadingUrl(true);
     setError(null);
     try {
-        const response = await fetch(imageUrl);
-        if (!response.ok) throw new Error("Failed to fetch image");
+        // Use proxy to avoid CORS errors
+        const response = await fetch(`${CORS_PROXY}${imageUrl}`);
+        if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+        
         const blob = await response.blob();
         if (!blob.type.startsWith('image/')) throw new Error("URL is not a valid image");
+        
         const reader = new FileReader();
         reader.onloadend = () => {
             setReferenceImage(reader.result as string);
@@ -101,8 +107,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
             setIsLoadingUrl(false);
         };
         reader.readAsDataURL(blob);
-    } catch (err) {
-        setError("Could not load image. Check CORS or try downloading it first.");
+    } catch (err: any) {
+        console.error(err);
+        setError(`Could not load image: ${err.message}. Try downloading it and using Upload instead.`);
         setIsLoadingUrl(false);
     }
   };
@@ -129,8 +136,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     try {
         const enhanced = await enhancePrompt(prompt);
         setPrompt(enhanced);
-    } catch (err) {
-        setError("Failed to enhance prompt. Check Cluster connection.");
+    } catch (err: any) {
+        console.warn("Enhancement failed, falling back to original prompt", err);
+        // Don't show error to user, just fail silently and let them generate
     } finally {
         setIsEnhancing(false);
     }
@@ -141,6 +149,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       setError("Please enter a description.");
       return;
     }
+    
+    // Safety check for keys
+    if (getActiveNodeCount() === 0) {
+        setError("SYSTEM ERROR: No Active API Keys. Please add 'AIza...' keys to your environment variables.");
+        return;
+    }
+
     setIsGenerating(true);
     setProgress(0);
     setError(null);
@@ -173,7 +188,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
             // Handle results as they come in to update progress
             let completed = 0;
             for (const p of promises) {
-                // Wait for individual promises just to track progress, but they run concurrently
                 p.then(() => {
                     completed++;
                     setProgress((completed / batchSize) * 100);
