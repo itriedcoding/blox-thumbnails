@@ -21,6 +21,7 @@ export interface GeneratedImage {
   pose?: string;
   timestamp: number;
   seed?: number;
+  isRefined?: boolean;
 }
 
 export interface ThumbnailConfig {
@@ -50,3 +51,15 @@ export interface PromptTemplate {
   prompt: string;
   style: ThumbnailStyle;
 }
+
+// New Types for Editor
+export interface Sticker {
+  id: string;
+  content: string; // Emoji or char
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export type FilterPreset = 'none' | 'matrix' | 'warm' | 'cool' | 'vintage';
+export type OverlayType = 'none' | 'vignette' | 'scanlines' | 'noise';

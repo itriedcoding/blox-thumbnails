@@ -1,44 +1,40 @@
 import React, { useState } from 'react';
 import { GeneratedImage } from '../types';
+import { refineImage } from '../services/geminiService';
+import { playSound } from '../App';
 
 interface GalleryProps {
   images: GeneratedImage[];
 }
 
 export const Gallery: React.FC<GalleryProps> = ({ images }) => {
+  const [lightboxImg, setLightboxImg] = useState<GeneratedImage | null>(null);
+  const [isRefining, setIsRefining] = useState(false);
+
   if (images.length === 0) return null;
 
-  const copyMeta = (img: GeneratedImage) => {
-    const data = JSON.stringify({ prompt: img.prompt, style: img.style, pose: img.pose, seed: img.seed, model: img.model }, null, 2);
-    navigator.clipboard.writeText(data);
-    alert("Metadata copied!");
-  };
-
-  const handleShare = async (img: GeneratedImage) => {
+  const handleRefine = async (img: GeneratedImage) => {
+      setIsRefining(true);
+      playSound('blip');
       try {
-          const response = await fetch(img.data);
-          const blob = await response.blob();
-          const file = new File([blob], `bloxthumb-${img.id}.png`, { type: 'image/png' });
-
-          if (navigator.share && navigator.canShare({ files: [file] })) {
-              await navigator.share({
-                  title: 'BloxThumb Render',
-                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}" #RobloxGFX #BloxThumb`,
-                  files: [file]
-              });
-          } else {
-              // Fallback to Twitter Intent
-              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"\n\nCreate yours at:`);
-              const url = encodeURIComponent("https://bloxthumb.com");
-              window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-          }
-      } catch (err) {
-          console.error("Share failed:", err);
-          alert("Could not share image directly. Try downloading it first!");
+          const refinedData = await refineImage(img.data, img.prompt);
+          // Here we would ideally update the state in App, but for this component separation, we might need to callback.
+          // Since we can't easily prop drill update upwards without changing interface drastically, 
+          // we'll trigger a download of the refined version for now as "Save Refined".
+          const link = document.createElement('a');
+          link.href = refinedData;
+          link.download = `refined-${img.id}.png`;
+          link.click();
+          playSound('success');
+      } catch (e) {
+          alert("Refine failed: " + e);
+      } finally {
+          setIsRefining(false);
       }
   };
 
   return (
+    <>
     <div className="w-full mt-24 animate-fade-in-up delay-200">
       <div className="flex items-end justify-between mb-8 border-b border-white/5 pb-4">
         <div>
@@ -52,29 +48,19 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
           <div 
             key={img.id} 
             className="group relative rounded-2xl overflow-hidden bg-[#0a0a10] border border-white/10 shadow-lg transition-all duration-500 hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.1)] hover:-translate-y-1"
-            style={{ animationDelay: `${idx * 100}ms` }}
           >
-            <div className="aspect-[9/16] md:aspect-square w-full overflow-hidden relative">
-                <img 
-                    src={img.data} 
-                    alt={img.prompt} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="aspect-[9/16] md:aspect-square w-full overflow-hidden relative cursor-zoom-in" onClick={() => setLightboxImg(img)}>
+                <img src={img.data} alt={img.prompt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 
-                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <p className="text-white text-xs font-medium line-clamp-2 leading-snug drop-shadow-md mb-3">
-                        {img.prompt}
-                    </p>
-                    <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-slate-400 font-mono uppercase bg-black/50 px-2 py-1 rounded backdrop-blur-sm">{img.style}</span>
-                        <div className="flex gap-2">
-                             <button onClick={() => handleShare(img)} title="Share on Socials" className="bg-white/10 hover:bg-neon-blue hover:text-black text-white p-1.5 rounded-lg transition-colors">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                             </button>
-                             <button onClick={() => copyMeta(img)} title="Copy Metadata" className="bg-white/10 hover:bg-white text-white hover:text-black p-1.5 rounded-lg transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-                             <a href={img.data} download={`bloxgen-${img.id}.png`} title="Download" className="bg-neon-blue text-black p-1.5 rounded-lg hover:bg-white transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></a>
-                        </div>
+                {/* Actions Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex gap-2 justify-center">
+                         <button onClick={() => handleRefine(img)} disabled={isRefining} className="px-3 py-1 bg-neon-purple/20 border border-neon-purple/50 text-neon-purple text-[10px] font-bold uppercase rounded hover:bg-neon-purple hover:text-white transition">
+                            {isRefining ? 'Refining...' : '✨ Upscale'}
+                         </button>
+                         <a href={img.data} download={`bloxthumb-${img.id}.png`} className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase rounded hover:bg-white hover:text-black transition">
+                            💾 Save
+                         </a>
                     </div>
                 </div>
             </div>
@@ -82,5 +68,14 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
         ))}
       </div>
     </div>
+
+    {/* Fullscreen Lightbox */}
+    {lightboxImg && (
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-8 animate-fade-in-up" onClick={() => setLightboxImg(null)}>
+            <img src={lightboxImg.data} className="max-h-full max-w-full object-contain shadow-2xl rounded-lg" />
+            <div className="absolute top-8 right-8 text-white/50 text-sm">Click anywhere to close</div>
+        </div>
+    )}
+    </>
   );
 };

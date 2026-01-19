@@ -68,6 +68,51 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
   }
 };
 
+export const refineImage = async (base64Image: string, prompt: string): Promise<string> => {
+    const matches = base64Image.match(/^data:(.+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) throw new Error("Invalid base64");
+
+    const parts = [
+        {
+            inlineData: {
+                mimeType: matches[1],
+                data: matches[2],
+            },
+        },
+        {
+            text: `[TASK: REFINE & UPSCALE]
+            Input is a Roblox GFX render. 
+            ACTION: Increase resolution, sharpen textures, fix any mesh artifacts, improve lighting quality.
+            MAINTAIN: The exact composition, poses, and colors. Do not change the subject.
+            STYLE: 8K Blender Cycles Render.
+            CONTEXT: ${prompt}`
+        }
+    ];
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image', // Flash image is good for img2img refinement
+            contents: { parts },
+            config: {
+                imageConfig: {
+                     aspectRatio: "1:1" // Preserves input generally or squares it, can't strictly force input ratio on edit yet easily without crop, so we default safe.
+                }
+            }
+        });
+
+        if (response.candidates && response.candidates[0].content.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+                }
+            }
+        }
+        throw new Error("Refine failed");
+    } catch (e: any) {
+        throw new Error(`Refine failed: ${e.message}`);
+    }
+};
+
 export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
   // Select Model
   const modelName = config.model === 'pro' 
