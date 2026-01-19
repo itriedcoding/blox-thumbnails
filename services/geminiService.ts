@@ -84,8 +84,9 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     [SCENE DESCRIPTION]
     ${config.prompt}
     
-    [CHARACTER POSE & ACTION]
-    ${config.pose ? `The main character is performing: ${config.pose}` : "Dynamic composition matching the scene context"}
+    [CHARACTERS]
+    ${config.secondReferenceImage ? "The scene MUST feature TWO characters interacting." : "The scene features the main character."}
+    ${config.pose ? `Action/Pose: ${config.pose}` : "Dynamic composition."}
     
     [ART STYLE: ${config.style.toUpperCase()}]
     ${getStylePrompt(config.style)}
@@ -99,14 +100,15 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     
     [NEGATIVE PROMPT]
     ${config.negativePrompt || ""}
-    low quality, jpeg artifacts, watermark, text overlay, ui, hud, pixelated, blurry, low poly, plastic toy look
+    low quality, jpeg artifacts, watermark, text overlay, ui, hud, pixelated, blurry, low poly, plastic toy look, distorted faces
   `;
 
   const parts: any[] = [];
 
+  // 1. First Avatar
   if (config.referenceImage) {
     if (config.referenceImage.startsWith('http')) {
-       parts.push({ text: `Reference Image URL: ${config.referenceImage}` });
+       parts.push({ text: `Reference Image URL (Main Character): ${config.referenceImage}` });
     } else {
         const matches = config.referenceImage.match(/^data:(.+);base64,(.+)$/);
         if (matches && matches.length === 3) {
@@ -116,9 +118,23 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
               data: matches[2],
             },
           });
-          parts.push({ text: "Use this image as the main composition reference." });
+          parts.push({ text: "Use this image as the MAIN CHARACTER reference." });
         }
     }
+  }
+
+  // 2. Second Avatar
+  if (config.secondReferenceImage) {
+      const matches = config.secondReferenceImage.match(/^data:(.+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        parts.push({
+          inlineData: {
+            mimeType: matches[1],
+            data: matches[2],
+          },
+        });
+        parts.push({ text: "Use this image as the SECOND CHARACTER reference. Place them next to or interacting with the main character." });
+      }
   }
   
   parts.push({ text: finalPrompt });

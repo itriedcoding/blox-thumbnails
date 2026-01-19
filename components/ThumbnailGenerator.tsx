@@ -9,15 +9,47 @@ interface ThumbnailGeneratorProps {
 }
 
 const ADVANCED_PROMPTS: PromptTemplate[] = [
-    { category: "Viral", label: "Surprise Face", style: "high-ctr", prompt: "Close up of Roblox avatar screaming in shock. Eyes wide open. Bright red arrows pointing to a mysterious glowing box. High contrast, saturated colors." },
-    { category: "Viral", label: "Noob vs Pro", style: "high-ctr", prompt: "Split screen. Left: Roblox Noob with wooden sword. Right: Pro with god armor and void sword. Lightning effects." },
-    { category: "Viral", label: "Impossible Obby", style: "high-ctr", prompt: "Looking down from massive height. Thin rainbow glass bridge. Character slipping. Dizzying perspective." },
-    { category: "Horror", label: "Entity Chase", style: "horror", prompt: "Dark hotel corridor. Distorted black entity rushing camera. Motion blur. Character running away. Cinematic horror lighting." },
-    { category: "Horror", label: "Backrooms", style: "horror", prompt: "Endless yellow rooms. Fluorescent lights humming. Bacteria monster silhouette. VHS filter." },
-    { category: "Anime", label: "Energy Clash", style: "anime", prompt: "Two characters clashing mid-air. Blue beam vs Red shield. Particle effects exploding. Anime action lines." },
-    { category: "Tycoon", label: "Mansion", style: "simulator", prompt: "Low angle of luxury mansion. Gold texture accents. Pile of cash. Sports cars. Sunset lighting." },
-    { category: "Tycoon", label: "Pets", style: "simulator", prompt: "Character surrounded by cubic pets (dragon, cat, unicorn). Glowing rarities. Bright grassy field." },
-    { category: "RPG", label: "Boss Fight", style: "rpg", prompt: "Massive magma golem boss vs small party of players. Volcanic cave. Ember particles." }
+    // VIRAL / CLICKBAIT
+    { category: "Viral", label: "Surprise Face (High CTR)", style: "high-ctr", prompt: "Extreme close-up of Roblox avatar face screaming in shock. Mouth wide open. Eyes popping out. Bright red arrows pointing to a mysterious glowing golden box in background. Hyper-saturated colors. 4k resolution." },
+    { category: "Viral", label: "Noob vs Pro", style: "high-ctr", prompt: "Split screen composition. Left side: Sad 'Noob' avatar in dirt hut holding wooden sword. Right side: Glowing 'God' avatar in diamond armor holding void sword with lightning aura. 'VS' lightning bolt in middle." },
+    { category: "Viral", label: "Impossible Challenge", style: "high-ctr", prompt: "First-person view looking down from a massive height. Thin glass bridge over a lava pit. Character slipping off the edge. '99% FAIL' text neon sign in background. Dizzying perspective." },
+    { category: "Viral", label: "Secret Room", style: "high-ctr", prompt: "Dark corridor with a hidden bookshelf door slightly cracked open. Golden god rays spilling out from the crack. Avatar tiptoeing towards it. Question marks floating in air." },
+    { category: "Viral", label: "Rich vs Poor", style: "high-ctr", prompt: "Split screen. Left: Homeless avatar holding a cardboard sign in rain. Right: Billionaire avatar in a suit standing next to a golden Bugatti and a pile of Robux." },
+
+    // ANIME / FIGHTING
+    { category: "Anime", label: "Energy Beam Clash", style: "anime", prompt: "Two powerful avatars clashing mid-air. One firing a massive blue Kamehameha beam, the other blocking with a red energy shield. Shockwaves shattering the ground. Anime speed lines. Particle overload." },
+    { category: "Anime", label: "Awakening Transformation", style: "anime", prompt: "Roblox avatar floating in void. Glowing white hair standing up (Ultra Instinct style). Purple aura erupting from body. Rocks floating upwards. Intense rim lighting. Cinematic 8k." },
+    { category: "Anime", label: "Swordsman Ultimate", style: "anime", prompt: "Samurai avatar unsheathing a katana. The blade is glowing neon green. The background is sliced in half with a distorted reality effect. Cherry blossom petals falling. Dynamic action angle." },
+    { category: "Anime", label: "Devil Fruit Power", style: "anime", prompt: "Avatar transforming into a blue phoenix made of blue flames. Wings spreading wide. Fire particles illuminating a dark night sky over an ocean. One Piece art style influence." },
+    { category: "Anime", label: "JoJo Stance", style: "anime", prompt: "Menacing avatar posing with a spectral 'Stand' spirit hovering behind them. The Stand is muscular and glowing purple. 'Menacing' katakana text effects in air. Stylish color palette." },
+
+    // HORROR
+    { category: "Horror", label: "Entity Chase (Doors)", style: "horror", prompt: "Long dark hotel hallway with many doors. A distorted black entity with white smile (The Seek) rushing towards the camera with motion blur. Avatar running away in panic. Flickering lights. Film grain." },
+    { category: "Horror", label: "Backrooms Found Footage", style: "horror", prompt: " VHS camera filter. Endless yellow mono-yellow rooms. Hum-buzz fluorescent lights. A tall, wire-like Bacteria monster silhouette standing at the end of the corridor. Unsettling realism." },
+    { category: "Horror", label: "Mascot Horror", style: "horror", prompt: "Abandoned toy factory. A giant, dirty, blue plush monster with sharp teeth emerging from the shadows. The avatar is hiding behind a crate, peeking out. Volumetric fog. Grimy textures." },
+    { category: "Horror", label: "The Mimic", style: "horror", prompt: "Traditional Japanese house at night. Lantern lighting. A tall pale woman with no face standing in the garden. Avatar holding a flashlight that illuminates her dress. Rainstorm." },
+    { category: "Horror", label: "Claustrophobia", style: "horror", prompt: "Avatar stuck in a ventilation shaft. Metal textures. Only light is from a lighter. A pale face peering through the grate ahead. Depth of field focus on the grate." },
+
+    // SIMULATOR / TYCOON
+    { category: "Simulator", label: "Pet Army", style: "simulator", prompt: "Avatar standing on a bright grassy hill. Surrounded by 50 cubic pets (dragons, cats, unicorns, dogs). The pets are glowing with different rarity colors (Legendary, Mythical). Bright blue sky. Pixar style." },
+    { category: "Simulator", label: "Giant Weightlifter", style: "simulator", prompt: "Avatar with comically huge muscles lifting a literal planet Earth over their head. Veins popping. Sweat drops. Training gym background. Bright, vibrant saturation." },
+    { category: "Simulator", label: "Speed Run", style: "simulator", prompt: "Avatar running at light speed. Leaving a neon trail of fire behind. Blurring background city. 'Speed: 999,999' holographic UI number floating. Motion blur effect." },
+    { category: "Tycoon", label: "Mega Mansion", style: "simulator", prompt: "Low angle shot of a massive modern luxury mansion. Infinity pool. Supercars parked in front (Lambo, Ferrari). Golden sunset lighting. Avatar wearing a suit standing on balcony." },
+    { category: "Tycoon", label: "Dropper Factory", style: "simulator", prompt: "Inside a sci-fi factory. Conveyor belts moving millions of glowing cubes. Machines processing cash. Avatar upgrading a control panel. Tech-heavy detail." },
+
+    // RPG / ADVENTURE
+    { category: "RPG", label: "Boss Raid", style: "rpg", prompt: "A party of 4 avatars fighting a colossal Magma Golem boss. The boss is 50ft tall and dripping lava. One player is tanking, one is healing, one is casting magic. Volcanic cave environment. Epic scale." },
+    { category: "RPG", label: "Dungeon Loot", style: "rpg", prompt: "Avatar opening a massive treasure chest in a dark dungeon. Gold light spilling out onto their face. Piles of gold coins and gems on the floor. Detailed stone textures. Torchlight." },
+    { category: "RPG", label: "Fantasy Landscape", style: "rpg", prompt: "Wide shot of a floating island kingdom. Waterfalls falling into the void. Avatar sitting on the edge of a cliff looking at the view. Clouds and birds. Breath of the Wild aesthetic." },
+    
+    // PVP / SHOOTER
+    { category: "Shooter", label: "Bedwars Defense", style: "cinematic", prompt: "Avatar in iron armor defending a bed wrapped in wool. Holding a diamond sword. Enemy team bridging over the void in the background. Skyblock islands. Intense focus." },
+    { category: "Shooter", label: "Tactical Breach", style: "cinematic", prompt: "SWAT team avatars stacking up on a door. Night vision goggles glowing green. Laser sights cutting through smoke. Realistic tactical gear. Muted military colors." },
+    { category: "Shooter", label: "Sniper Nest", style: "cinematic", prompt: "View over the shoulder of a sniper avatar. Ghillie suit. Looking through scope at a distant city. Sun glare on the lens. Dust particles in air." },
+
+    // OBBY / PARKOUR
+    { category: "Obby", label: "Tower of Hell", style: "obby", prompt: "Looking up from the bottom of a massive cylindrical tower. Spinning neon lasers. Platforms of different colors. Other players falling past the camera. Motion blur. Vertigo effect." },
+    { category: "Obby", label: "Bike Obby", style: "obby", prompt: "Avatar on a bicycle riding a thin rainbow rail in the clouds. looping rollercoaster track. Bright sun. Cheerful atmosphere. Low poly aesthetic but high quality lighting." }
 ];
 
 const NEGATIVE_PRESETS = {
@@ -42,10 +74,17 @@ const CORS_PROXY = "https://corsproxy.io/?";
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated }) => {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS.clean);
-  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  
+  // Image Inputs
+  const [referenceImage, setReferenceImage] = useState<string | null>(null); // P1 or Upload
+  const [secondReferenceImage, setSecondReferenceImage] = useState<string | null>(null); // P2
   const [imageUrl, setImageUrl] = useState('');
+  
+  // Roblox State
   const [robloxUsername, setRobloxUsername] = useState('');
+  const [robloxUsername2, setRobloxUsername2] = useState('');
   const [avatarData, setAvatarData] = useState<RobloxAvatar | null>(null);
+  const [secondAvatarData, setSecondAvatarData] = useState<RobloxAvatar | null>(null);
   
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [batchSize, setBatchSize] = useState<number>(1);
@@ -64,7 +103,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [progress, setProgress] = useState(0); 
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
-  const [isFetchingAvatar, setIsFetchingAvatar] = useState(false);
+  const [isFetchingAvatar1, setIsFetchingAvatar1] = useState(false);
+  const [isFetchingAvatar2, setIsFetchingAvatar2] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorImage, setEditorImage] = useState<string | null>(null);
 
@@ -81,6 +121,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       reader.onloadend = () => {
         setReferenceImage(reader.result as string);
         setAvatarData(null);
+        setSecondReferenceImage(null);
+        setSecondAvatarData(null);
         setError(null);
       };
       reader.readAsDataURL(file);
@@ -100,6 +142,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         reader.onloadend = () => {
             setReferenceImage(reader.result as string);
             setAvatarData(null);
+            setSecondReferenceImage(null);
+            setSecondAvatarData(null);
             setIsLoadingUrl(false);
         };
         reader.readAsDataURL(blob);
@@ -109,20 +153,23 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     }
   };
 
-  const handleFetchRobloxAvatar = async () => {
-    if (!robloxUsername.trim()) return;
-    setIsFetchingAvatar(true);
-    setError(null);
-    try {
-      const avatar = await getRobloxAvatar(robloxUsername, avatarModel);
-      setAvatarData(avatar);
-      setReferenceImage(avatar.base64); 
-    } catch (err: any) {
-      setError(`Roblox Error: ${err.message}.`);
-    } finally {
-      setIsFetchingAvatar(false);
-    }
-  };
+  const fetchAvatar = async (username: string, setFetching: (b: boolean) => void, setData: (d: RobloxAvatar) => void, setRef: (s: string) => void) => {
+      if (!username.trim()) return;
+      setFetching(true);
+      setError(null);
+      try {
+          const avatar = await getRobloxAvatar(username, avatarModel);
+          setData(avatar);
+          setRef(avatar.base64);
+      } catch (err: any) {
+          setError(`Roblox Error: ${err.message}`);
+      } finally {
+          setFetching(false);
+      }
+  }
+
+  const handleFetchRobloxAvatar1 = () => fetchAvatar(robloxUsername, setIsFetchingAvatar1, setAvatarData, setReferenceImage);
+  const handleFetchRobloxAvatar2 = () => fetchAvatar(robloxUsername2, setIsFetchingAvatar2, setSecondAvatarData, setSecondReferenceImage);
 
   const handleEnhancePrompt = async () => {
     if (!prompt.trim()) return;
@@ -161,7 +208,18 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         if (runParallel) {
             const promises = Array.from({ length: batchSize }, (_, i) => {
                 const currentSeed = seed + i;
-                const config = { prompt, negativePrompt: negativePrompt || undefined, referenceImage: referenceImage || undefined, aspectRatio, style, model, avatarModel, pose, seed: currentSeed };
+                const config = { 
+                    prompt, 
+                    negativePrompt: negativePrompt || undefined, 
+                    referenceImage: referenceImage || undefined,
+                    secondReferenceImage: secondReferenceImage || undefined, 
+                    aspectRatio, 
+                    style, 
+                    model, 
+                    avatarModel, 
+                    pose, 
+                    seed: currentSeed 
+                };
                 return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
             });
 
@@ -180,7 +238,18 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         } else {
             for (let i = 0; i < batchSize; i++) {
                 const currentSeed = seed + i;
-                const config = { prompt, negativePrompt: negativePrompt || undefined, referenceImage: referenceImage || undefined, aspectRatio, style, model, avatarModel, pose, seed: currentSeed };
+                const config = { 
+                    prompt, 
+                    negativePrompt: negativePrompt || undefined, 
+                    referenceImage: referenceImage || undefined,
+                    secondReferenceImage: secondReferenceImage || undefined,
+                    aspectRatio, 
+                    style, 
+                    model, 
+                    avatarModel, 
+                    pose, 
+                    seed: currentSeed 
+                };
                 const imageData = await generateThumbnail(config);
                 onImageGenerated(imageData, prompt, style, model, avatarModel, pose, negativePrompt, currentSeed);
                 if (i === 0) setEditorImage(imageData);
@@ -333,40 +402,87 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         ))}
                     </div>
 
-                    <div className="flex-1 flex items-center justify-center relative bg-black/30 rounded-2xl border border-white/5 overflow-hidden min-h-[300px]">
-                        {!referenceImage ? (
-                            inputMethod === 'roblox' ? (
-                                <div className="w-full p-6 space-y-4">
-                                    <div className="text-center">
-                                        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3 text-lg border border-white/5">👤</div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Avatar Sync</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {['R15', 'Rthro'].map(m => (
-                                            <button key={m} onClick={() => setAvatarModel(m as any)} className={`flex-1 py-2 text-[10px] font-bold uppercase border rounded-lg ${avatarModel === m ? 'bg-neon-blue/20 border-neon-blue text-neon-blue' : 'border-white/10 text-slate-500'}`}>{m}</button>
-                                        ))}
-                                    </div>
-                                    <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-neon-blue outline-none" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar()} />
-                                    <button onClick={handleFetchRobloxAvatar} disabled={isFetchingAvatar} className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white transition-all">{isFetchingAvatar ? 'Syncing...' : 'Fetch'}</button>
+                    <div className="flex-1 flex flex-col items-center justify-start relative bg-black/30 rounded-2xl border border-white/5 overflow-hidden min-h-[400px]">
+                        
+                        {/* ROBLOX INPUT METHOD */}
+                        {inputMethod === 'roblox' && (
+                             <div className="w-full p-4 space-y-4 overflow-y-auto">
+                                <div className="text-center mb-4">
+                                    <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-2 text-lg border border-white/5">👥</div>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi-Avatar Sync</p>
                                 </div>
-                            ) : inputMethod === 'upload' ? (
+                                
+                                <div className="flex gap-2 mb-4">
+                                    {['R15', 'Rthro'].map(m => (
+                                        <button key={m} onClick={() => setAvatarModel(m as any)} className={`flex-1 py-2 text-[10px] font-bold uppercase border rounded-lg ${avatarModel === m ? 'bg-neon-blue/20 border-neon-blue text-neon-blue' : 'border-white/10 text-slate-500'}`}>{m}</button>
+                                    ))}
+                                </div>
+
+                                {/* PLAYER 1 */}
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-2 block">Player 1 (Main)</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar1()} />
+                                        <button onClick={handleFetchRobloxAvatar1} disabled={isFetchingAvatar1} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">{isFetchingAvatar1 ? '...' : 'GET'}</button>
+                                    </div>
+                                    {avatarData && (
+                                        <div className="mt-2 relative h-20 w-full bg-black/50 rounded-lg overflow-hidden border border-white/10 group">
+                                            <img src={avatarData.imageUrl} alt="P1" className="w-full h-full object-cover opacity-80" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                 <button onClick={() => { setAvatarData(null); setReferenceImage(null); }} className="text-xs text-red-400 font-bold uppercase hover:text-red-300">Remove</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* PLAYER 2 */}
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-2 block">Player 2 (Optional)</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" value={robloxUsername2} onChange={(e) => setRobloxUsername2(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar2()} />
+                                        <button onClick={handleFetchRobloxAvatar2} disabled={isFetchingAvatar2} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">{isFetchingAvatar2 ? '...' : 'GET'}</button>
+                                    </div>
+                                    {secondAvatarData && (
+                                        <div className="mt-2 relative h-20 w-full bg-black/50 rounded-lg overflow-hidden border border-white/10 group">
+                                            <img src={secondAvatarData.imageUrl} alt="P2" className="w-full h-full object-cover opacity-80" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                 <button onClick={() => { setSecondAvatarData(null); setSecondReferenceImage(null); }} className="text-xs text-red-400 font-bold uppercase hover:text-red-300">Remove</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                             </div>
+                        )}
+
+                        {/* UPLOAD METHOD */}
+                        {inputMethod === 'upload' && (
+                            !referenceImage ? (
                                 <div onClick={() => fileInputRef.current?.click()} className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-colors p-6 text-center">
                                     <div className="text-3xl mb-4 text-slate-600">📂</div>
                                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Click to Upload</span>
                                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                                 </div>
                             ) : (
-                                <div className="w-full p-6 space-y-4">
+                                <div className="relative w-full h-full group">
+                                    <img src={referenceImage} alt="Ref" className="w-full h-full object-cover" />
+                                    <button onClick={() => setReferenceImage(null)} className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg hover:bg-red-500 transition-colors">✕</button>
+                                </div>
+                            )
+                        )}
+
+                        {/* URL METHOD */}
+                        {inputMethod === 'url' && (
+                            !referenceImage ? (
+                                <div className="w-full p-6 space-y-4 flex flex-col justify-center h-full">
                                      <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-xs text-center focus:border-neon-blue outline-none" />
                                      <button onClick={handleUrlLoad} disabled={isLoadingUrl} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-white">{isLoadingUrl ? 'Loading...' : 'Load URL'}</button>
                                 </div>
+                            ) : (
+                                <div className="relative w-full h-full group">
+                                    <img src={referenceImage} alt="Ref" className="w-full h-full object-cover" />
+                                    <button onClick={() => setReferenceImage(null)} className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg hover:bg-red-500 transition-colors">✕</button>
+                                </div>
                             )
-                        ) : (
-                            <div className="absolute inset-0 group">
-                                <img src={referenceImage} alt="Ref" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                                <button onClick={() => { setReferenceImage(null); setAvatarData(null); }} className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg hover:bg-red-500 transition-colors">✕</button>
-                                {avatarData && <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white font-bold">{avatarData.username}</div>}
-                            </div>
                         )}
                     </div>
                 </div>

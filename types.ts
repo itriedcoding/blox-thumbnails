@@ -27,6 +27,7 @@ export interface ThumbnailConfig {
   prompt: string;
   negativePrompt?: string;
   referenceImage?: string; // Base64 string
+  secondReferenceImage?: string; // Base64 string for 2nd avatar
   aspectRatio: "16:9" | "1:1" | "9:16";
   style: ThumbnailStyle;
   model: ModelType;
