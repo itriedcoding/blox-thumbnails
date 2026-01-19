@@ -45,13 +45,6 @@ export interface RobloxAvatar {
   model: AvatarModel;
 }
 
-export interface PromptTemplate {
-  category: string;
-  label: string;
-  prompt: string;
-  style: ThumbnailStyle;
-}
-
 // New Types for Editor
 export interface Sticker {
   id: string;

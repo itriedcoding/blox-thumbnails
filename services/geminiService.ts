@@ -45,6 +45,19 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
   return styles[style] || styles.cinematic;
 };
 
+export const generateRandomPrompt = async (): Promise<string> => {
+  try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: "Generate a wildly creative, highly detailed prompt for a Roblox GFX thumbnail. It should describe a specific scene, action, character appearance, and lighting. Output ONLY the prompt text, no intro/outro.",
+      });
+      return response.text?.trim() || "Roblox noob eating a taco in space";
+  } catch (e) {
+      console.warn("Random prompt failed, using fallback");
+      return "Cyberpunk samurai roblox avatar standing in neon rain, cinematic lighting, 8k";
+  }
+};
+
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
@@ -91,11 +104,11 @@ export const refineImage = async (base64Image: string, prompt: string): Promise<
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image', // Flash image is good for img2img refinement
+            model: 'gemini-2.5-flash-image', 
             contents: { parts },
             config: {
                 imageConfig: {
-                     aspectRatio: "1:1" // Preserves input generally or squares it, can't strictly force input ratio on edit yet easily without crop, so we default safe.
+                     aspectRatio: "1:1" 
                 }
             }
         });

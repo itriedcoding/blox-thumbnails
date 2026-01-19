@@ -6,7 +6,7 @@ import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
-import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType } from './types';
+import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
 
 // Simple Audio Synthesis for UI Sounds (No external files)
 export const playSound = (type: 'blip' | 'success') => {
@@ -40,6 +40,7 @@ export const playSound = (type: 'blip' | 'success') => {
 function App() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [remixConfig, setRemixConfig] = useState<ThumbnailConfig | null>(null);
 
   useEffect(() => {
     try {
@@ -80,6 +81,21 @@ function App() {
     setGeneratedImages((prev) => prev.filter(img => img.id !== id));
   };
 
+  const handleRemix = (img: GeneratedImage) => {
+      setRemixConfig({
+          prompt: img.prompt,
+          negativePrompt: img.negativePrompt,
+          style: img.style,
+          model: img.model,
+          avatarModel: img.avatarModel,
+          pose: img.pose,
+          seed: img.seed,
+          aspectRatio: "16:9" // Default fallback as aspect ratio wasn't strictly stored in previous interface version
+      });
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-[#020204] text-slate-100 selection:bg-neon-blue selection:text-black font-sans relative overflow-x-hidden">
         
@@ -117,8 +133,8 @@ function App() {
                               Configure the Nano Banana engine parameters below.
                             </p>
                         </div>
-                        <ThumbnailGenerator onImageGenerated={handleImageGenerated} />
-                        <Gallery images={generatedImages.slice(0, 8)} />
+                        <ThumbnailGenerator onImageGenerated={handleImageGenerated} remixConfig={remixConfig} />
+                        <Gallery images={generatedImages.slice(0, 8)} onRemix={handleRemix} />
                     </div>
                 )}
 

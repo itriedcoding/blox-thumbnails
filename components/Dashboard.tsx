@@ -42,7 +42,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
               const imported = JSON.parse(event.target?.result as string);
               if (Array.isArray(imported)) {
                   alert("Import successful! Refresh page to see changes (in a real app, state would merge).");
-                  // In a real app we would merge state here via prop callback
                   localStorage.setItem('bloxthumb_images', JSON.stringify(imported));
                   window.location.reload();
               }

@@ -1,16 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { generateThumbnail, enhancePrompt, getActiveNodeCount } from '../services/geminiService';
+import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, PromptTemplate } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig } from '../types';
 import { ImageEditor } from './ImageEditor';
-import { playSound } from '../App'; // Assuming global sound function
+import { playSound } from '../App';
 
 interface ThumbnailGeneratorProps {
   onImageGenerated: (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, pose?: string, negativePrompt?: string, seed?: number) => void;
-  initialPrompt?: string; // For Remix
+  remixConfig?: ThumbnailConfig | null;
 }
 
-// ... (Keep existing ADVANCED_PROMPTS and POSES arrays same as previous, abbreviated for brevity in this response but would be full in file)
 const POSES = [
     { id: 'standing', label: 'Idle / Standing', icon: '🧍' },
     { id: 'crossed_arms', label: 'Crossed Arms', icon: '🙅' },
@@ -62,11 +61,12 @@ const NEGATIVE_PRESETS_OPTIONS = [
 
 const CORS_PROXY = "https://corsproxy.io/?";
 
-export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, initialPrompt }) => {
-  const [prompt, setPrompt] = useState(initialPrompt || '');
+export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, remixConfig }) => {
+  const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS_OPTIONS[0].val);
   
   // Image Inputs
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [secondReferenceImage, setSecondReferenceImage] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState('');
@@ -79,7 +79,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [batchSize, setBatchSize] = useState<number>(1);
-  const [showLibrary, setShowLibrary] = useState(false);
   
   const [inputMethod, setInputMethod] = useState<'upload' | 'url' | 'roblox'>('roblox');
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
@@ -95,13 +94,28 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0); 
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isRolling, setIsRolling] = useState(false);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [isFetchingAvatar1, setIsFetchingAvatar1] = useState(false);
   const [isFetchingAvatar2, setIsFetchingAvatar2] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorImage, setEditorImage] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Load Remix Config
+  useEffect(() => {
+      if (remixConfig) {
+          setPrompt(remixConfig.prompt);
+          if (remixConfig.negativePrompt) setNegativePrompt(remixConfig.negativePrompt);
+          setAspectRatio(remixConfig.aspectRatio);
+          setStyle(remixConfig.style);
+          setModel(remixConfig.model);
+          setAvatarModel(remixConfig.avatarModel);
+          if (remixConfig.pose) setPose(remixConfig.pose);
+          if (remixConfig.seed) setSeed(remixConfig.seed);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          playSound('blip');
+      }
+  }, [remixConfig]);
 
   // Keyboard Shortcut
   useEffect(() => {
@@ -112,17 +126,19 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [prompt, referenceImage, style]); // Deps for closure
+  }, [prompt, referenceImage, style]);
 
-  const handleRandomize = () => {
+  const handleRandomize = async () => {
+      setIsRolling(true);
       playSound('blip');
-      const adjectives = ["Neon", "Dark", "Epic", "Cute", "Scary", "Cyberpunk", "Medieval"];
-      const subjects = ["Samurai", "Noob", "King", "Robot", "Ninja", "Wizard"];
-      const actions = ["fighting a dragon", "driving a supercar", "building a base", "running from zombies", "holding a golden trophy"];
-      const settings = ["in a burning city", "on a space station", "in a forest", "in a desert", "underwater"];
-      
-      const p = `${adjectives[Math.floor(Math.random()*adjectives.length)]} Roblox ${subjects[Math.floor(Math.random()*subjects.length)]} ${actions[Math.floor(Math.random()*actions.length)]} ${settings[Math.floor(Math.random()*settings.length)]}`;
-      setPrompt(p);
+      try {
+          const randomPrompt = await generateRandomPrompt();
+          setPrompt(randomPrompt);
+      } catch (e) {
+          console.error(e);
+      } finally {
+          setIsRolling(false);
+      }
   };
 
   const getPromptStrength = () => {
@@ -134,7 +150,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   };
   
   const getTokenCost = () => {
-      // Fake estimator: Base cost + 1 per 10 chars
       return model === 'pro' ? 25 + Math.floor(prompt.length / 10) : 1 + Math.floor(prompt.length / 50);
   };
 
@@ -228,10 +243,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setError(null);
     setEditorImage(null);
     
-    // Save to history
     setPromptHistory(prev => [prompt, ...prev].slice(0, 5));
 
-    // Combine presets into prompt invisibly
     const fullPrompt = `${prompt} ${lighting} ${camera}`.trim();
 
     try {
@@ -289,7 +302,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                          <h3 className="text-2xl font-bold text-white uppercase tracking-tighter">Render Configuration</h3>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={handleRandomize} className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs hover:bg-white/10" title="Random Prompt">🎲 Roll</button>
+                        <button onClick={handleRandomize} disabled={isRolling} className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs hover:bg-white/10 flex items-center gap-2" title="AI Random Prompt">
+                             {isRolling ? <div className="w-4 h-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div> : '🎲 AI Roll'}
+                        </button>
                         <div className="bg-black/50 p-1 rounded-lg border border-white/10 flex">
                             <button onClick={() => setModel('flash')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${model === 'flash' ? 'bg-white text-black shadow-md' : 'text-slate-500 hover:text-white'}`}>Fast</button>
                             <button onClick={() => setModel('pro')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1 ${model === 'pro' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>Pro <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span></button>
@@ -448,10 +463,46 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                                     )}
                                 </div>
                                 
-                                {/* P2 omitted for brevity but logic exists in original... keeping code structure */}
+                                {/* PLAYER 2 */}
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-2 block flex justify-between">
+                                        <span>Player 2 (Optional)</span>
+                                        {secondAvatarData && <span className="text-neon-green">Ready</span>}
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input type="text" value={robloxUsername2} onChange={(e) => setRobloxUsername2(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar2()} />
+                                        <button onClick={handleFetchRobloxAvatar2} disabled={isFetchingAvatar2} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors min-w-[50px]">{isFetchingAvatar2 ? '...' : 'GET'}</button>
+                                    </div>
+                                    {secondAvatarData && (
+                                        <div className="mt-3 relative h-32 w-full bg-black/50 rounded-lg overflow-hidden border border-white/10 group shadow-inner">
+                                            <img src={secondAvatarData.imageUrl} alt="P2" className="w-full h-full object-contain" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                                                 <button onClick={() => { setSecondAvatarData(null); setSecondReferenceImage(null); }} className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/50 rounded-lg text-xs font-bold uppercase hover:bg-red-500 hover:text-white transition-all">Remove</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                              </div>
                         )}
-                        {/* Upload/URL inputs remain same... */}
+
+                        {inputMethod === 'upload' && (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                                <button onClick={() => fileInputRef.current?.click()} className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10 hover:bg-white/10 transition-all">
+                                    <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                </button>
+                                <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">Upload Reference PNG</p>
+                                {referenceImage && <p className="text-neon-green text-xs mt-2">Image Loaded</p>}
+                            </div>
+                        )}
+
+                        {inputMethod === 'url' && (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-6">
+                                <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white text-xs outline-none mb-3" />
+                                <button onClick={handleUrlLoad} disabled={isLoadingUrl} className="w-full py-3 bg-white/10 rounded-lg text-xs font-bold uppercase hover:bg-white hover:text-black transition-colors">{isLoadingUrl ? 'Loading...' : 'Load Image'}</button>
+                                {referenceImage && <p className="text-neon-green text-xs mt-4">Image Loaded</p>}
+                            </div>
+                        )}
                     </div>
                 </div>
 

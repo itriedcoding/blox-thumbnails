@@ -5,9 +5,10 @@ import { playSound } from '../App';
 
 interface GalleryProps {
   images: GeneratedImage[];
+  onRemix: (img: GeneratedImage) => void;
 }
 
-export const Gallery: React.FC<GalleryProps> = ({ images }) => {
+export const Gallery: React.FC<GalleryProps> = ({ images, onRemix }) => {
   const [lightboxImg, setLightboxImg] = useState<GeneratedImage | null>(null);
   const [isRefining, setIsRefining] = useState(false);
 
@@ -18,9 +19,7 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
       playSound('blip');
       try {
           const refinedData = await refineImage(img.data, img.prompt);
-          // Here we would ideally update the state in App, but for this component separation, we might need to callback.
-          // Since we can't easily prop drill update upwards without changing interface drastically, 
-          // we'll trigger a download of the refined version for now as "Save Refined".
+          // Auto-download refined for now as a separate asset
           const link = document.createElement('a');
           link.href = refinedData;
           link.download = `refined-${img.id}.png`;
@@ -30,6 +29,29 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
           alert("Refine failed: " + e);
       } finally {
           setIsRefining(false);
+      }
+  };
+
+  const handleShare = async (img: GeneratedImage) => {
+      try {
+          const response = await fetch(img.data);
+          const blob = await response.blob();
+          const file = new File([blob], `bloxthumb-${img.id}.png`, { type: 'image/png' });
+
+          if (navigator.share && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                  title: 'BloxThumb Render',
+                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}" #RobloxGFX #BloxThumb`,
+                  files: [file]
+              });
+          } else {
+              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"\n\nCreate yours at:`);
+              const url = encodeURIComponent("https://bloxthumb.com");
+              window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+          }
+      } catch (err) {
+          console.error("Share failed:", err);
+          alert("Could not share image directly. Try downloading it first!");
       }
   };
 
@@ -54,9 +76,15 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
                 
                 {/* Actions Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex gap-2 justify-center flex-wrap">
+                         <button onClick={() => onRemix(img)} className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase rounded hover:bg-white hover:text-black transition">
+                            🎛️ Remix
+                         </button>
                          <button onClick={() => handleRefine(img)} disabled={isRefining} className="px-3 py-1 bg-neon-purple/20 border border-neon-purple/50 text-neon-purple text-[10px] font-bold uppercase rounded hover:bg-neon-purple hover:text-white transition">
-                            {isRefining ? 'Refining...' : '✨ Upscale'}
+                            {isRefining ? '...' : '✨ Upscale'}
+                         </button>
+                         <button onClick={() => handleShare(img)} className="px-3 py-1 bg-blue-500/20 border border-blue-500/50 text-blue-400 text-[10px] font-bold uppercase rounded hover:bg-blue-500 hover:text-white transition">
+                            📤 Share
                          </button>
                          <a href={img.data} download={`bloxthumb-${img.id}.png`} className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase rounded hover:bg-white hover:text-black transition">
                             💾 Save
