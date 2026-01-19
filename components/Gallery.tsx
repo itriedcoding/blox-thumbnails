@@ -22,18 +22,19 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
 
           if (navigator.share && navigator.canShare({ files: [file] })) {
               await navigator.share({
-                  title: 'My BloxThumb Render',
-                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}"`,
+                  title: 'BloxThumb Render',
+                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}" #RobloxGFX #BloxThumb`,
                   files: [file]
               });
           } else {
               // Fallback to Twitter Intent
-              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"`);
+              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"\n\nCreate yours at:`);
               const url = encodeURIComponent("https://bloxthumb.com");
               window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
           }
       } catch (err) {
           console.error("Share failed:", err);
+          alert("Could not share image directly. Try downloading it first!");
       }
   };
 
@@ -68,7 +69,7 @@ export const Gallery: React.FC<GalleryProps> = ({ images }) => {
                     <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-400 font-mono uppercase bg-black/50 px-2 py-1 rounded backdrop-blur-sm">{img.style}</span>
                         <div className="flex gap-2">
-                             <button onClick={() => handleShare(img)} title="Share" className="bg-white/10 hover:bg-neon-pink hover:text-white text-white p-1.5 rounded-lg transition-colors">
+                             <button onClick={() => handleShare(img)} title="Share on Socials" className="bg-white/10 hover:bg-neon-blue hover:text-black text-white p-1.5 rounded-lg transition-colors">
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                              </button>
                              <button onClick={() => copyMeta(img)} title="Copy Metadata" className="bg-white/10 hover:bg-white text-white hover:text-black p-1.5 rounded-lg transition-colors"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>

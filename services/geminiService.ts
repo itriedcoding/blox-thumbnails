@@ -34,13 +34,13 @@ export const getActiveNodeCount = (): number => {
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
   const styles: Record<ThumbnailStyle, string> = {
-    cinematic: "MASTERPIECE CGI RENDER. Unreal Engine 5.4. Path Traced. Cinematic Lighting (Rembrandt). Volumetric Fog. Anamorphic Lens Flares. 8K UHD. High Poly Nanite Meshes. Subsurface Scattering on Skin. Raytraced Reflections. Color Graded (Teal & Orange). Hyper-Detailed Textures. NO PLASTIC LOOK.",
-    simulator: "PIXAR MOVIE QUALITY. High-Fidelity Vibrance. Smooth Shading. Ambient Occlusion. Global Illumination. Bright, saturated colors. Soft shadows. Commercial Polish. Detailed textures on surfaces. No jagged edges.",
-    obby: "RETROWAVE NEON. High contrast. Emission shaders. Motion blur. Dynamic perspective. Glowing edges. Cyberpunk aesthetic. Smooth geometry. Reflection probes.",
-    horror: "REALISTIC HORROR. PBR materials (wet, dirt, grunge). Volumetric fog. Low-key lighting. Film grain. Chromatic aberration. Unsettling atmosphere. Hyper-detailed textures. Raytraced shadows.",
-    rpg: "FANTASY EPIC. Particle effects. Magic glows. Metallic reflections. Atmospheric perspective. God rays. Detailed armor textures. Cinematic lighting. Fantasy landscape background.",
-    anime: "GUILTY GEAR STRIVE STYLE. Cel-shaded 3D. Dynamic rim lighting. Action lines. Vibrant effects. 2.5D Composition. High definition. Crisp lines.",
-    "high-ctr": "YOUTUBE VIRAL THUMBNAIL. Hyper-saturated. Exaggerated expressions. High contrast. Glossy textures. 3D Emojis. Clickbait Composition. Rendered in 8K. Sharp focus."
+    cinematic: "MASTERPIECE BLENDER GFX. Cycles Render. Cinematic Lighting. Volumetric Fog. 8K UHD. High resolution textures. Ambient Occlusion.",
+    simulator: "ROBLOX SIMULATOR STYLE. Bright, vibrant colors. Smooth shading. Sun flares. Clean vector-like aesthetic but 3D. Commercial polish.",
+    obby: "NEON OBBY AESTHETIC. Glowing parts. High contrast. Dynamic perspective. Speed lines. Floating platforms background.",
+    horror: "ROBLOX HORROR. Dark atmosphere. Film grain. Spotlight lighting. Grimy textures. Unsettling vibe. PBR materials.",
+    rpg: "FANTASY RPG. Magic particle effects. Glowing weapons. Epic atmosphere. Detailed armor textures. God rays.",
+    anime: "ROBLOX ANIME. Cel-shaded visual effects. Dynamic action lines. Over-the-top energy auras. Intense lighting.",
+    "high-ctr": "VIRAL YOUTUBE THUMBNAIL. High saturation. Expressive. Contrast boost. Sharp focus. Eye-catching composition."
   };
   return styles[style] || styles.cinematic;
 };
@@ -49,21 +49,17 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `You are a World-Class Creative Director for High-End Game Art.
+      contents: `You are a Roblox GFX Artist.
       
-      Your task is to take a basic user idea and transform it into a PRODUCTION-READY 3D RENDER PROMPT.
-      
+      Task: Optimize this prompt for a high-quality Blender render of a Roblox scene.
       Input: "${originalPrompt}"
       
-      Instructions:
-      1. EXPAND on the scene. Add environmental details (weather, time of day, background objects).
-      2. DEFINE the lighting specifically (e.g., "volumetric morning sun", "neon cyberpunk rim lights", "dramatic three-point lighting").
-      3. DEFINE the camera (e.g., "low angle hero shot", "dynamic wide angle fisheye", "close-up macro").
-      4. ADD texture keywords (e.g., "4k pbr", "raytraced reflections", "subsurface scattering on skin").
-      5. KEEP the core subject intact but make it sound epic.
-      6. CRITICAL: Ensure the description calls for a HIGH-FIDELITY 3D RENDER. Avoid "blocky" or "lego" terms. Use "smooth", "detailed", "high-poly".
+      Guidelines:
+      1. Keep it concise but descriptive.
+      2. Add lighting and camera keywords (e.g., "rim lighting", "low angle").
+      3. Ensure it emphasizes "Roblox Avatar" and "3D Render".
       
-      Output ONLY the final enhanced prompt string. Do not add intro/outro text.`,
+      Output ONLY the enhanced prompt.`,
     });
     return response.text?.trim() || originalPrompt;
   } catch (e) {
@@ -78,49 +74,56 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     ? 'gemini-3-pro-image-preview' 
     : 'gemini-2.5-flash-image';    
 
-  let avatarDesc = "";
-  if (config.avatarModel === 'Rthro') {
-    avatarDesc = 'Hyper-Realistic Humanoid (Rthro), detailed skin pores, realistic hair strands, cloth simulation, human proportions, cinematic lighting';
+  let avatarSpecs = "";
+  if (config.avatarModel === 'R6') {
+    avatarSpecs = `
+      - TYPE: CLASSIC ROBLOX R6
+      - GEOMETRY: Blocky torso, simple blocky limbs. No knees, no elbows.
+      - AESTHETIC: Iconic "Old Roblox" look but with high-quality rendering.
+      - TEXTURES: Clean, sharp, standard Roblox textures.
+    `;
   } else if (config.avatarModel === 'R15') {
-    avatarDesc = 'High-Fidelity 3D Character (R15), bevelled edges, subsurface scattering on materials, NO visible studs, NO plastic seams, smooth joints, semi-realistic style';
+    avatarSpecs = `
+      - TYPE: MODERN ROBLOX R15
+      - GEOMETRY: 15 distinct body parts. Segmented arms and legs (visible joints).
+      - AESTHETIC: Standard modern Roblox avatar. Sharp edges on body parts.
+      - TEXTURES: High fidelity clothing textures applied to the blocky mesh.
+    `;
   } else {
-    // R6
-    avatarDesc = 'Stylized Classic 3D Character (R6), but rendered with high-end CGI materials. Smooth bends (blender rig style), no sharp polygon edges, glowing textures, ambient occlusion, polished finish.';
+    avatarSpecs = `
+      - TYPE: ROBLOX RTHRO
+      - GEOMETRY: Humanoid proportions but stylized. Smooth joints.
+      - AESTHETIC: Realistic Roblox avatar style.
+    `;
   }
 
   const finalPrompt = `
     [TASK]
-    Render a Hyper-Realistic 3D Roblox Game Thumbnail (8K Resolution).
-    IMPORTANT: The output must look like a high-end CGI movie render (Pixar/Dreamworks level) or Unreal Engine 5 tech demo. 
-    AVOID the "classic lego toy" look. Characters should have realistic proportions, detailed skin/material textures, and smooth geometry.
+    Create a High-Quality 3D Roblox GFX Thumbnail (8K Resolution).
+    The image MUST feature a Roblox Avatar. It must look authentically like the game Roblox, rendered in software like Blender (Cycles) or Cinema 4D.
     
-    [SCENE DESCRIPTION]
+    [AVATAR SPECIFICATIONS]
+    ${avatarSpecs}
+    
+    [CRITICAL RULES]
+    1. NO "Melting Plastic" look. Edges should be defined.
+    2. NO Generic 3D Humans. Must be a ROBLOX AVATAR.
+    3. NO Low-poly artifacts. Use high-resolution textures.
+    4. Materials should look like high-quality digital assets (GFX), not cheap physical toys.
+    
+    [SCENE]
     ${config.prompt}
     
-    [CHARACTERS]
-    ${config.secondReferenceImage ? "The scene MUST feature TWO characters interacting." : "The scene features the main character."}
-    ${config.pose ? `Action/Pose: ${config.pose}. Ensure the pose looks natural and dynamic, avoiding stiff 'toy' joints.` : "Dynamic composition."}
+    [ADDITIONAL DETAILS]
+    ${config.secondReferenceImage ? "- Features TWO Roblox avatars interacting." : "- Features the main Roblox avatar."}
+    ${config.pose ? `- Pose: ${config.pose}` : "- Dynamic Pose"}
     
-    [MATERIAL OVERRIDE - CRITICAL]
-    - SKIN: Convert plastic skin to REALISTIC HUMAN SKIN with subsurface scattering (SSS) and pore detail.
-    - CLOTHING: Convert blocky textures to SIMULATED FABRIC with folds, stitching, and high-res normal maps.
-    - JOINTS: SMOOTH OUT all limb connections. Do not show robotic joints or gaps. The character must look like a cohesive 3D model, not a toy.
-    - EYES: Use high-quality glossy shaders for eyes with reflections.
-    
-    [ART STYLE: ${config.style.toUpperCase()}]
+    [STYLE: ${config.style.toUpperCase()}]
     ${getStylePrompt(config.style)}
-    
-    [TECHNICAL SPECIFICATIONS]
-    - Engine: Unreal Engine 5.3 Path Tracing
-    - Global Illumination: Lumen / Raytraced
-    - Geometry: Nanite High-Poly Meshes (No visible polygons)
-    - Avatar Appearance: ${avatarDesc}
-    - Materials: 4K PBR Textures, Displacement maps, Fresnel reflections, Subsurface Scattering
-    - Post-Processing: ACES Color Profile, Depth of Field, volumetric fog, motion blur, bloom.
     
     [NEGATIVE PROMPT]
     ${config.negativePrompt || ""}
-    lego, lego blocks, plastic studs, toy-like, rigid joints, low poly, pixelated, blurry, flat lighting, simple textures, distorted faces, jpeg artifacts, watermark, text overlay, ui, hud, plastic skin, doll-like, jagged edges, low resolution, artifacts, blurry background, blocky hands, square torso
+    cheap plastic, melted, distorted, bad anatomy, realistic human, photograph, fuzzy textures, low resolution, blurry, watermark, text, ui, hud, deformed
   `;
 
   const parts: any[] = [];
@@ -129,7 +132,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   if (config.referenceImage) {
     if (config.referenceImage.startsWith('http')) {
        parts.push({ text: `Reference Image URL (Main Character): ${config.referenceImage}` });
-       parts.push({ text: "Use the character from this URL as the MAIN SUBJECT. Adapt them to the requested HIGH-FIDELITY style." });
+       parts.push({ text: "Use this Roblox avatar as the main subject. Keep the outfit and colors accurate." });
     } else {
         const matches = config.referenceImage.match(/^data:(.+);base64,(.+)$/);
         if (matches && matches.length === 3) {
@@ -139,7 +142,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
               data: matches[2],
             },
           });
-          parts.push({ text: "Use this image as the MAIN CHARACTER reference. Adapt the character to the requested HIGH-FIDELITY art style (remove plastic look, smooth joints, realistic materials)." });
+          parts.push({ text: "Use this image as the MAIN ROBLOX AVATAR reference. Keep the outfit/accessories." });
         }
     }
   }
@@ -154,7 +157,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
             data: matches[2],
           },
         });
-        parts.push({ text: "Use this image as the SECOND CHARACTER reference. Place them next to or interacting with the main character. Adapt to HIGH-FIDELITY style." });
+        parts.push({ text: "Use this image as the SECOND ROBLOX AVATAR reference. Have them interacting with the main avatar." });
       }
   }
   
@@ -195,7 +198,6 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     throw new Error("Render complete, but output was empty.");
   } catch (error: any) {
     console.error("Gemini Generation Error:", error);
-    // Simple fallback logic if pro fails
     if (config.model === 'pro' && error.message?.includes('403')) {
         console.warn("Pro model failed, retrying with Flash...");
         return generateThumbnail({...config, model: 'flash'});

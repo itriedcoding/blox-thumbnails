@@ -15,18 +15,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
 
           if (navigator.share && navigator.canShare({ files: [file] })) {
               await navigator.share({
-                  title: 'My BloxThumb Render',
-                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}"`,
+                  title: 'BloxThumb Render',
+                  text: `Check out this Roblox GFX created with BloxThumb! Prompt: "${img.prompt}" #RobloxGFX`,
                   files: [file]
               });
           } else {
               // Fallback to Twitter Intent
-              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"`);
+              const text = encodeURIComponent(`Check out this AI generated Roblox thumbnail! 🍌\n\nPrompt: "${img.prompt}"\n\nGenerated with BloxThumb`);
               const url = encodeURIComponent("https://bloxthumb.com");
               window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
           }
       } catch (err) {
           console.error("Share failed:", err);
+          alert("Could not share. Please try downloading the image.");
       }
   };
 
@@ -47,7 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
         <div className="flex items-center justify-between mb-12 border-b border-white/5 pb-8">
             <div>
                 <h2 className="text-4xl font-black text-white tracking-tighter uppercase">Asset Gallery</h2>
-                <p className="text-slate-400 mt-2 font-light">Manage and export your generations</p>
+                <p className="text-slate-400 mt-2 font-light">Manage, Share, and Export your generations</p>
             </div>
             <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-full text-xs font-bold text-white uppercase tracking-wider backdrop-blur-md">
                 {images.length} Stored Items
@@ -66,7 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
                         
                         {/* Hover Actions */}
                         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                             <button onClick={() => handleShare(img)} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-neon-pink transition-colors" title="Share">
+                             <button onClick={() => handleShare(img)} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-neon-blue transition-colors" title="Share">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                             </button>
                              <a href={img.data} download={`bloxgen-${img.id}.png`} className="p-2 bg-black/60 backdrop-blur-md rounded-lg text-white hover:bg-white hover:text-black transition-colors" title="Download">
