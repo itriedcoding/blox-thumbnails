@@ -20,10 +20,11 @@ const ADVANCED_PROMPTS: PromptTemplate[] = [
     { category: "RPG", label: "Boss Fight", style: "rpg", prompt: "Massive magma golem boss vs small party of players. Volcanic cave. Ember particles." }
 ];
 
+// UPDATED: Aggressive negative prompts to remove "Lego/Plastic" look
 const NEGATIVE_PRESETS = {
-  clean: "blur, noise, grain, low resolution, watermark, text, logo, distorted, ugly, bad anatomy, extra limbs",
-  cinematic: "cartoon, cel shaded, flat, 2d, sketch, drawing, bright colors, saturated, low poly",
-  horror: "bright, happy, sunlight, cute, saturated, colorful, cartoon, funny"
+  clean: "lego, plastic, studs, toy, blocky, low poly, jagged edges, pixelated, blur, noise, watermark, text, logo, ugly, bad anatomy",
+  cinematic: "cartoon, cel shaded, flat, 2d, sketch, drawing, bright colors, saturated, low poly, plastic skin, doll",
+  horror: "bright, happy, sunlight, cute, saturated, colorful, cartoon, funny, toy, plastic"
 };
 
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated }) => {
@@ -44,7 +45,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
-  const [avatarModel, setAvatarModel] = useState<AvatarModel>('R15');
+  const [avatarModel, setAvatarModel] = useState<AvatarModel>('Rthro'); // Default to Rthro for more realism
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);

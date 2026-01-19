@@ -25,7 +25,7 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
                     </span>
-                    <span className="text-slate-300 text-xs font-bold tracking-[0.2em] uppercase font-mono group-hover:text-white transition-colors">Nano Banana Engine V3</span>
+                    <span className="text-slate-300 text-xs font-bold tracking-[0.2em] uppercase font-mono group-hover:text-white transition-colors">Hyper-Realism Engine Active</span>
                 </div>
                 
                 <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.9] font-sans drop-shadow-2xl">
@@ -37,8 +37,8 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                 </h1>
                 
                 <p className="text-xl md:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-light border-l-2 border-neon-blue/30 pl-6 backdrop-blur-sm">
-                  The world's most advanced <strong className="text-white">Roblox GFX AI</strong>. 
-                  Now powered by the <strong className="text-neon-blue">Nano Banana Pro</strong> model for 4K ray-traced details.
+                  Create <strong className="text-white">Photorealistic</strong> Roblox GFX instantly.
+                  Our AI banishes the plastic "toy" look, delivering cinema-grade lighting, realistic fabrics, and subsurface scattering.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
@@ -100,21 +100,21 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
           <div className="mb-24">
               <span className="text-neon-blue font-mono text-sm tracking-widest uppercase mb-4 block">System Capabilities</span>
               <h2 className="text-5xl md:text-6xl font-bold text-white max-w-3xl leading-tight">
-                  Engineered for <span className="text-slate-500">Maximum Impact</span>
+                  Engineered for <span className="text-slate-500">Hyper-Realism</span>
               </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               {[
                   {
-                      title: "Direct Avatar Sync",
-                      desc: "Bypass manual modeling. Our engine hooks directly into Roblox APIs to fetch, rig, and render any user avatar instantly.",
+                      title: "Non-Lego Physics",
+                      desc: "Our AI re-interprets Roblox geometry. Limbs bend naturally, skin looks soft, and cloth folds realistically. No rigid blocks.",
                       icon: "01",
                       gradient: "from-blue-500/20 to-cyan-500/20"
                   },
                   {
-                      title: "CTR Optimization",
-                      desc: "Trained on high-performing YouTube assets. The AI automatically enhances contrast, facial expressions, and composition for clicks.",
+                      title: "Cinema Lighting",
+                      desc: "Volumetric fog, ray-traced reflections, and global illumination usually found in offline renderers like Octane.",
                       icon: "02",
                       gradient: "from-purple-500/20 to-pink-500/20"
                   },

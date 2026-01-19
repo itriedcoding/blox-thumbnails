@@ -7,14 +7,11 @@ import { Privacy } from './components/Privacy';
 import { Status } from './components/Status';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
-import { ApiKeySelector } from './components/ApiKeySelector';
-import { getStoredKey } from './services/geminiService';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType } from './types';
 
 function App() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('home');
-  const [isSystemReady, setIsSystemReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -35,14 +32,6 @@ function App() {
     }
   }, [generatedImages]);
 
-  // Check for API Key (Env Only)
-  useEffect(() => {
-    const key = getStoredKey();
-    if (key) {
-        setIsSystemReady(true);
-    }
-  }, []);
-
   const handleImageGenerated = (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, negativePrompt?: string, seed?: number) => {
     const newImage: GeneratedImage = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -61,11 +50,6 @@ function App() {
   const handleDeleteImage = (id: string) => {
     setGeneratedImages((prev) => prev.filter(img => img.id !== id));
   };
-
-  // Strictly require AI Studio Key Selection
-  if (!isSystemReady) {
-      return <ApiKeySelector onKeySelected={() => setIsSystemReady(true)} />;
-  }
 
   return (
     <div className="min-h-screen bg-obsidian text-slate-100 selection:bg-neon-blue selection:text-black font-sans relative overflow-x-hidden">

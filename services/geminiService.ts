@@ -14,7 +14,6 @@ const getAIInstance = () => {
 };
 
 // Advanced exponential backoff for Free Tier quota management
-// Effectively allows "Unlimited" usage by waiting out the rate limits
 const retryWithBackoff = async <T>(
   operation: () => Promise<T>, 
   maxRetries = 5, 
@@ -26,15 +25,13 @@ const retryWithBackoff = async <T>(
       return await operation();
     } catch (error: any) {
       const msg = error.message || '';
-      // Check for Rate Limit (429) or Service Unavailable (503)
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
-        if (i === maxRetries - 1) throw error; // No more retries
-        
+        if (i === maxRetries - 1) throw error;
         console.warn(`[System] Quota limit hit. Cooling down for ${delay/1000}s... (Attempt ${i + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff
+        delay *= 2;
       } else {
-        throw error; // Not a retryable error
+        throw error;
       }
     }
   }
@@ -42,14 +39,16 @@ const retryWithBackoff = async <T>(
 };
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
+  // HYPER-REALISM OVERHAUL
+  // We strictly enforce PBR textures, Raytracing, and avoiding the "plastic" look.
   const styles: Record<ThumbnailStyle, string> = {
-    cinematic: "Ultra-realistic 8k render, Blender Cycles engine, raytracing, cinematic depth of field, volumetric lighting. The character must look like a high-end GFX render used in top Roblox games.",
-    simulator: "Vibrant, highly saturated colors, smooth plastic textures, low-poly but high fidelity, cheerful atmosphere, pet simulator aesthetic, bright studio lighting. Clean, glossy Roblox studs and smooth terrain.",
-    obby: "Neon colors, glowing obstacles, dynamic parkour action perspective, floating platforms, high contrast. The character is in mid-air jumping. Speed lines, motion blur.",
-    horror: "Dark, gritty, atmospheric fog, high contrast, flashlight lighting. The Roblox character looks terrified. Detailed texture overlay (grunge, rust). Photorealistic horror style.",
-    rpg: "Epic fantasy style, magical particle effects, glowing weapons. The Roblox avatar is wearing detailed armor. Bloom lighting, adventurous atmosphere.",
-    anime: "Cell-shaded, vibrant visual effects, action lines. The Roblox avatar has spiky anime hair and an aura. 'Demon Slayer' or 'One Piece' Roblox game style.",
-    "high-ctr": "YOUTUBE CLICKBAIT THUMBNAIL. Extreme contrast, maximum saturation. The Roblox avatar has an exaggerated face (Shocked/Screaming). Thick white outlines around the character. Bright background with sunburst effect."
+    cinematic: "PHOTOREALISTIC CINEMATIC. Unreal Engine 5 level detail. 8K resolution. Raytraced reflections. Volumetric fog. Depth of field (bokeh). The characters must look like high-budget movie assets, not toys. Skin has subsurface scattering. Clothing has realistic fabric textures and folds.",
+    simulator: "HIGH-FIDELITY VIBRANCE. Pixar-level rendering. Soft, global illumination. No sharp polygon edges. Everything is smooth and rounded. Textures are high resolution (4K). Bright, cheerful, but physically accurate lighting. Grass and environment must look lush and detailed, not flat.",
+    obby: "EXTREME DYNAMICS. Motion blur on edges. High contrast neon lighting against dark backgrounds. The character is performing a dynamic parkour move with realistic anatomy bending (no rigid block joints). Glowing textures with bloom. Reflections on surfaces.",
+    horror: "HYPER-REALISTIC HORROR. PBR materials: Rust, dirt, grime, blood, wet surfaces. Cinematic low-key lighting. The character looks genuinely terrified with detailed facial expressions. Volumetric smoke. Film grain. Chromatic aberration. Looks like a Resident Evil cutscene starring a stylized avatar.",
+    rpg: "FANTASY EPIC. Particle effects are volumetric and glowing. Armor looks like real metal with scratches and reflections. Magic effects cast real dynamic light on the environment. Atmospheric perspective. Majestic scale.",
+    anime: "HIGH-BUDGET ANIME 3D. Like a Arc System Works game (Guilty Gear Strive style). Cell-shaded but with dynamic lighting and rim lights. intense action lines. Glowing auras. The character model is stylized but high-poly, not blocky.",
+    "high-ctr": "VIRAL THUMBNAIL AESTHETIC. Maximum texture clarity. Exaggerated but high-quality lighting (Rim lights + Key light). The character pops out from the background. hyper-detailed facial expression. 3D rendered emojis/arrows with glossy textures."
   };
   return styles[style] || styles.cinematic;
 };
@@ -60,13 +59,14 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
       const ai = getAIInstance();
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `You are an expert Roblox GFX artist. 
-        Rewrite the following prompt to be a highly detailed description of a Roblox Render.
-        MANDATORY: The subject MUST be a Roblox Avatar. If the user describes a person, describe them as a Roblox Avatar with specific accessories.
+        contents: `You are a Lead 3D Artist at a top game studio.
+        Rewrite the following prompt to describe a PHOTOREALISTIC 3D RENDER.
+        The goal is to banish the "lego/toy" look.
+        Focus on: Lighting, Texture Quality, Camera Angle, and Atmosphere.
         
         Input: "${originalPrompt}"
         
-        Output (keep it purely descriptive):`,
+        Output (keep it purely descriptive, no conversational filler):`,
       });
       return response.text?.trim() || originalPrompt;
     } catch (e) {
@@ -82,23 +82,27 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     
     const styleKeywords = getStylePrompt(config.style);
     
-    // Updated Model Selection for Nano Banana series
-    // 'flash' -> 'gemini-2.5-flash-image' (Nano Banana)
-    // 'pro' -> 'gemini-3-pro-image-preview' (Nano Banana Pro)
+    // Always prioritize the best visual model for 3D generation
     const modelName = config.model === 'pro' 
       ? 'gemini-3-pro-image-preview' 
       : 'gemini-2.5-flash-image';
 
-    const characterModelInstruction = config.avatarModel === 'Rthro'
-      ? "CHARACTER REQUIREMENT: ROBLOX RTHRO (REALISTIC) AVATAR. The character MUST have 'Rthro' proportions: taller, thinner, more realistic human-like joints and scaling, NOT blocky. Smooth limbs, detailed clothing mapping. Matches the 'Rthro' package style in Roblox."
-      : "CHARACTER REQUIREMENT: ROBLOX R15 (BLOCKY) AVATAR. The character MUST have classic blocky proportions. Rectangular torso (1.0 or 2.0 package), separate cylindrical/blocky limb segments. Distinct shoulder, elbow, hip, and knee joints. NO realistic human proportions. It must look like a plastic toy/figure.";
+    // REPLACED: Old "Blocky" instructions with "High-End GFX" instructions
+    // We want to force the model to interpret Roblox avatars as high-quality 3D characters
+    const characterModelInstruction = `
+      [CHARACTER RENDER RULES]
+      - STYLE: PROFESSIONAL ROBLOX GFX (Blender Cycles / Octane Render).
+      - ANATOMY: Use "BENT LIMBS" style. Joints must be smooth and curved, NOT rigid or sharp. 
+      - PHYSICS: Clothing must have realistic wrinkles, folds, and texture. It should look like fabric, not a texture sticker.
+      - MATERIAL: Skin should look soft (Subsurface Scattering), Armor should look like metal, Hair should have strands.
+      - DO NOT RENDER: Studs on top of heads, sharp blocky corners, flat plastic textures.
+      - EXPRESSION: High-quality 3D face, full of emotion.
+    `;
 
     const finalPrompt = `
-      [STRICT CONSTRAINT: ROBLOX ONLY]
-      This image MUST be a 3D render of a Roblox Game Scene.
-      EVERY character in the scene MUST be a Roblox Avatar.
-      Do NOT generate realistic humans. Do NOT generate cartoons.
-      ONLY generate Roblox Avatars.
+      [TASK: GENERATE HYPER-REALISTIC 3D ART]
+      Create a stunning 8K resolution 3D render.
+      The subject is a stylized character (Roblox-based) but rendered with PHOTOREALISM.
 
       [SCENE DESCRIPTION]
       ${config.prompt}
@@ -106,23 +110,20 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       [VISUAL STYLE: ${config.style.toUpperCase()}]
       ${styleKeywords}
       
-      [AVATAR SPECIFICATION]
       ${characterModelInstruction}
 
-      [RENDER SETTINGS]
-      - Engine: Blender / Octane Render (Roblox GFX Style)
-      - Texture Quality: 4K PBR
-      - Lighting: HDR Environment, Global Illumination
-      ${config.style === 'high-ctr' ? '- EMOTION: Exaggerated facial expression decal on the Roblox face.' : ''}
+      [TECHNICAL SPECIFICATIONS]
+      - Renderer: Unreal Engine 5 / Blender Cycles
+      - Lighting: HDRI, Raytracing, Global Illumination, Ambient Occlusion
+      - Camera: Cinematic composition, depth of field, bokeh
+      - Texture Quality: 8K, PBR (Physically Based Rendering)
       
-      [NEGATIVE PROMPT]
+      [NEGATIVE PROMPT (THINGS TO AVOID)]
       - ${config.negativePrompt || ""}
-      - realistic human, flesh, skin texture (must look like plastic/roblox skin)
-      - 2d drawing, sketch
-      - blurry, low resolution
-      - watermarks, text, ui elements
-      - distorted roblox avatar
-      - ${config.avatarModel === 'R15' ? 'realistic proportions, smooth limbs, human body' : 'blocky limbs, square torso, lego style'}
+      - plastic toy look, lego studs, sharp polygon edges, low poly, pixelated
+      - flat lighting, simple textures, cartoon outlines (unless anime style)
+      - distorted faces, extra limbs, bad anatomy, floating parts
+      - blurry, low resolution, jpeg artifacts
     `;
 
     const parts: any[] = [];
@@ -138,11 +139,12 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
         });
         
         const imageInstruction = `
-          [REFERENCE IMAGE SOURCE]
-          The provided image is a Roblox Avatar.
-          Render THIS EXACT AVATAR in the scene described below.
-          Keep the hat, hair, shirt, pants, and accessories EXACTLY the same.
-          Just change the pose and lighting.
+          [REFERENCE IMAGE INSTRUCTION]
+          The attached image is the character reference.
+          Keep the character's identity (hair, colors, outfit) BUT UPGRADE THE GRAPHICS.
+          Render this character as a HIGH-BUDGET 3D MODEL.
+          Fix any low-poly edges from the reference. Make the clothing look real. Make the lighting cinematic.
+          Do NOT just copy the low-quality screenshot. RE-IMAGINE it in 8K.
         `;
           
         parts.push({
@@ -174,7 +176,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     }
 
     try {
-      console.log(`Generating with ${modelName} | Model: ${config.avatarModel}`);
+      console.log(`Generating with ${modelName} | Mode: Hyper-Realistic GFX`);
 
       const response = await ai.models.generateContent({
         model: modelName,
