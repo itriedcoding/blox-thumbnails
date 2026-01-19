@@ -1,7 +1,7 @@
 export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rpg' | 'anime' | 'high-ctr';
 export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R15' | 'Rthro';
-export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy';
+export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy' | 'status';
 
 export interface GeneratedImage {
   id: string;

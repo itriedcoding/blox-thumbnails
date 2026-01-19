@@ -4,6 +4,7 @@ import { Home } from './components/Home';
 import { Dashboard } from './components/Dashboard';
 import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
+import { Status } from './components/Status';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType } from './types';
@@ -55,12 +56,17 @@ function App() {
         
         {/* Global Scanlines & Grain */}
         <div className="scanlines"></div>
+        <div className="fixed inset-0 pointer-events-none z-[100] opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
         
         {/* Dynamic Background Elements */}
         <div className="fixed inset-0 z-0 pointer-events-none perspective-container">
              {/* Deep Space Gradients */}
             <div className="absolute inset-0 bg-[#020205]"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#05050a] to-[#020205]"></div>
             <div className="grid-floor opacity-20"></div>
+            
+            {/* Vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_100%)] opacity-80"></div>
         </div>
 
         <div className="relative z-10 flex flex-col min-h-screen">
@@ -91,12 +97,13 @@ function App() {
                     <Dashboard images={generatedImages} onDelete={handleDeleteImage} />
                 )}
 
+                {currentView === 'status' && <Status />}
                 {currentView === 'terms' && <Terms />}
                 {currentView === 'privacy' && <Privacy />}
             </main>
 
             {/* Ultra Minimal Footer */}
-            <footer className="border-t border-white/5 bg-black/80 backdrop-blur-xl py-16 mt-auto">
+            <footer className="border-t border-white/5 bg-black/80 backdrop-blur-xl py-16 mt-auto relative z-20">
                 <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-black font-black text-lg">B</div>
@@ -105,8 +112,13 @@ function App() {
                            <span className="text-[10px] text-slate-500 uppercase tracking-widest">AI GFX Engine</span>
                         </div>
                     </div>
+                    <div className="flex gap-8 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <button onClick={() => setCurrentView('terms')} className="hover:text-white transition-colors">Terms</button>
+                        <button onClick={() => setCurrentView('privacy')} className="hover:text-white transition-colors">Privacy</button>
+                        <button onClick={() => setCurrentView('status')} className="hover:text-neon-green transition-colors flex items-center gap-2"><span className="w-2 h-2 bg-neon-green rounded-full"></span> Status</button>
+                    </div>
                     <div className="text-slate-600 text-xs font-mono uppercase tracking-wider">
-                        © {new Date().getFullYear()} Blox Thumbnails. Roblox is a trademark of Roblox Corporation.
+                        © {new Date().getFullYear()} Blox Thumbnails.
                     </div>
                 </div>
             </footer>
