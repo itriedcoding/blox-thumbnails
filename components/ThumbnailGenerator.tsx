@@ -48,6 +48,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0); // For batch progress
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [isFetchingAvatar, setIsFetchingAvatar] = useState(false);
@@ -111,7 +112,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setIsFetchingAvatar(true);
     setError(null);
     try {
-      // Explicitly pass the user's selected model preference to the service
       const avatar = await getRobloxAvatar(robloxUsername, avatarModel);
       setAvatarData(avatar);
       setReferenceImage(avatar.base64); 
@@ -142,38 +142,62 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       return;
     }
     setIsGenerating(true);
+    setProgress(0);
     setError(null);
     setEditorImage(null);
 
     try {
         saveHistory(prompt);
-        const requests = Array.from({ length: batchSize }).map((_, i) => {
+        
+        // SEQUENTIAL PROCESSING for Rate Limit Management
+        // "Unlimited" feel by queuing requests instead of erroring out
+        for (let i = 0; i < batchSize; i++) {
             const currentSeed = seed + i;
-            const config: ThumbnailConfig = {
-                prompt,
-                negativePrompt: negativePrompt || undefined,
-                referenceImage: referenceImage || undefined,
-                aspectRatio,
-                style,
-                model,
-                avatarModel, // Ensure this state is passed
-                seed: currentSeed
-            };
-            return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
-        });
+            
+            try {
+                const config: ThumbnailConfig = {
+                    prompt,
+                    negativePrompt: negativePrompt || undefined,
+                    referenceImage: referenceImage || undefined,
+                    aspectRatio,
+                    style,
+                    model,
+                    avatarModel,
+                    seed: currentSeed
+                };
 
-        const results = await Promise.all(requests);
-        results.forEach(res => {
-            onImageGenerated(res.data, prompt, style, model, avatarModel, negativePrompt, res.seed);
-        });
-        if (results.length > 0) {
-            setEditorImage(results[0].data);
+                // Generate single image
+                const imageData = await generateThumbnail(config);
+                
+                // Immediately stream result to UI
+                onImageGenerated(imageData, prompt, style, model, avatarModel, negativePrompt, currentSeed);
+                
+                // If it's the first one, open it in editor automatically
+                if (i === 0) setEditorImage(imageData);
+
+                setProgress(((i + 1) / batchSize) * 100);
+
+                // Smart Delay: If we have more items, wait to avoid 429 RPM limit
+                // Free tier has limits, so we throttle.
+                if (i < batchSize - 1) {
+                    const delay = model === 'pro' ? 4000 : 1500; // Pro needs more cooldown
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+            } catch (innerError: any) {
+                console.error(`Batch item ${i} failed:`, innerError);
+                // If it's a hard auth error, stop. If it's just a glitch, try to continue.
+                if (innerError.message.includes("Access Denied") || innerError.message.includes("API Key")) {
+                    throw innerError;
+                }
+            }
         }
 
     } catch (err: any) {
       setError(err.message || "Failed to generate thumbnail.");
     } finally {
       setIsGenerating(false);
+      setProgress(0);
     }
   };
 
@@ -195,7 +219,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 <div>
                     <h3 className="text-4xl font-black text-white mb-2 flex items-center gap-3 font-mono tracking-tighter uppercase">
                         Configuration
-                        <span className="text-[10px] bg-neon-blue/20 text-neon-blue px-3 py-1 rounded-full border border-neon-blue/30 uppercase tracking-[0.2em] font-sans">Pro</span>
+                        <span className="text-[10px] bg-neon-blue/20 text-neon-blue px-3 py-1 rounded-full border border-neon-blue/30 uppercase tracking-[0.2em] font-sans">
+                            {model === 'pro' ? 'Nano Banana Pro' : 'Nano Banana'}
+                        </span>
                     </h3>
                     <p className="text-slate-400 text-sm font-light tracking-wide">Customize your render pipeline parameters</p>
                 </div>
@@ -213,13 +239,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                             onClick={() => setModel('flash')}
                             className={`px-6 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wide ${model === 'flash' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
-                            Flash
+                            Banana (Fast)
                         </button>
                         <button 
                             onClick={() => setModel('pro')}
                             className={`px-6 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wide flex items-center gap-1 ${model === 'pro' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                         >
-                             Ultra 2.0
+                             Banana Pro (HD)
                         </button>
                     </div>
                 </div>
@@ -379,8 +405,18 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                      </div>
 
                      <button onClick={handleGenerate} disabled={isGenerating} className={`w-full py-6 rounded-2xl font-black text-xl uppercase tracking-[0.2em] shadow-2xl transition-all relative overflow-hidden group ${isGenerating ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-white text-black hover:scale-[1.02] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.3)]'}`}>
-                        <span className="relative z-10">{isGenerating ? 'Rendering Scene...' : `Generate ${batchSize > 1 ? `(${batchSize})` : ''}`}</span>
+                        <span className="relative z-10 flex items-center justify-center gap-3">
+                            {isGenerating ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    {batchSize > 1 ? `Batch Processing (${Math.round(progress)}%)` : 'Rendering...'}
+                                </>
+                            ) : `Generate ${batchSize > 1 ? `(${batchSize})` : ''}`}
+                        </span>
                         {!isGenerating && <div className="absolute inset-0 bg-gradient-to-r from-neon-blue via-white to-neon-purple opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"></div>}
+                        {isGenerating && (
+                             <div className="absolute bottom-0 left-0 h-1 bg-neon-blue transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                        )}
                      </button>
                      
                      {error && <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-300 text-xs text-center font-bold uppercase tracking-wide">{error}</div>}

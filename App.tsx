@@ -7,7 +7,7 @@ import { Privacy } from './components/Privacy';
 import { Status } from './components/Status';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
-import { Setup } from './components/Setup';
+import { ApiKeySelector } from './components/ApiKeySelector';
 import { getStoredKey } from './services/geminiService';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType } from './types';
 
@@ -35,7 +35,7 @@ function App() {
     }
   }, [generatedImages]);
 
-  // Check for API Key (Env or LocalStorage)
+  // Check for API Key (Env Only)
   useEffect(() => {
     const key = getStoredKey();
     if (key) {
@@ -62,9 +62,9 @@ function App() {
     setGeneratedImages((prev) => prev.filter(img => img.id !== id));
   };
 
-  // Render Setup if System Not Ready
+  // Strictly require AI Studio Key Selection
   if (!isSystemReady) {
-      return <Setup onComplete={() => setIsSystemReady(true)} />;
+      return <ApiKeySelector onKeySelected={() => setIsSystemReady(true)} />;
   }
 
   return (

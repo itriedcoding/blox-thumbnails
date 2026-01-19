@@ -25,7 +25,7 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
                     </span>
-                    <span className="text-slate-300 text-xs font-bold tracking-[0.2em] uppercase font-mono group-hover:text-white transition-colors">V2.0 Engine Live</span>
+                    <span className="text-slate-300 text-xs font-bold tracking-[0.2em] uppercase font-mono group-hover:text-white transition-colors">Nano Banana Engine V3</span>
                 </div>
                 
                 <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.9] font-sans drop-shadow-2xl">
@@ -38,7 +38,7 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                 
                 <p className="text-xl md:text-2xl text-slate-400 max-w-xl mb-12 leading-relaxed font-light border-l-2 border-neon-blue/30 pl-6 backdrop-blur-sm">
                   The world's most advanced <strong className="text-white">Roblox GFX AI</strong>. 
-                  Generate viral, ray-traced thumbnails in seconds. No Blender required.
+                  Now powered by the <strong className="text-neon-blue">Nano Banana Pro</strong> model for 4K ray-traced details.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
@@ -59,16 +59,6 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                     >
                         View Gallery
                     </button>
-                </div>
-
-                {/* Mini Stats */}
-                <div className="mt-16 flex items-center gap-12 text-slate-500 font-mono text-sm">
-                    <div className="flex items-center gap-2 group cursor-default">
-                        <span className="text-neon-blue group-hover:animate-ping">●</span> 1.5M+ Renders
-                    </div>
-                    <div className="flex items-center gap-2 group cursor-default">
-                         <span className="text-neon-purple group-hover:animate-ping">●</span> 4K Export
-                    </div>
                 </div>
             </div>
 
@@ -129,8 +119,8 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                       gradient: "from-purple-500/20 to-pink-500/20"
                   },
                   {
-                      title: "Scene Composer",
-                      desc: "Type 'Bedwars Arena' or 'Horror Hotel' and get a fully detailed, lit environment matching the game's aesthetic.",
+                      title: "Nano Banana Pro",
+                      desc: "Powered by the latest Gemini 3 Pro Vision models for unparalleled texture resolution and lighting accuracy.",
                       icon: "03",
                       gradient: "from-orange-500/20 to-red-500/20"
                   }

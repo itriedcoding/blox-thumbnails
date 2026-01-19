@@ -3,6 +3,13 @@ export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R15' | 'Rthro';
 export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy' | 'status';
 
+declare global {
+  interface AIStudio {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+  }
+}
+
 export interface GeneratedImage {
   id: string;
   data: string; // Base64 string
