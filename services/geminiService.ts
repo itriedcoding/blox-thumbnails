@@ -1,92 +1,121 @@
 import { GoogleGenAI } from "@google/genai";
 import { ThumbnailConfig, ThumbnailStyle } from "../types";
 
-// KEY ROTATION SYSTEM
-// Allows 'Unlimited' scaling by rotating through a pool of keys provided in process.env.API_KEY
-// Format: "key1,key2,key3" in the environment variable.
+// ==========================================
+// 🚀 NANO BANANA CLUSTER ENGINE (V3.0)
+// ==========================================
+// This engine manages a pool of 100+ API Keys to provide unlimited throughput.
+// It automatically handles rate limits, load balancing, and failover.
+
+// 1. CLUSTER STATE
+let keyCursor = 0;
+const BLACKLIST_TIMEOUT = 1000 * 60 * 5; // 5 Minutes
+const failedKeys = new Map<string, number>();
+
+// 2. KEY INGESTION
 const getKeyPool = (): string[] => {
-  const envKeys = process.env.API_KEY;
-  if (!envKeys) return [];
-  return envKeys.split(',').map(k => k.trim()).filter(k => k.length > 0);
+  // Parsing logic for massive key lists (Comma, Newline, or Semicolon separated)
+  const rawData = process.env.API_KEY || "";
+  const candidates = rawData.split(/[\n,;]+/).map(k => k.trim());
+  
+  // Strict Validation: Only accept keys that look like Google API Keys
+  const validKeys = candidates.filter(k => 
+    k.startsWith("AIza") && 
+    k.length > 35 && 
+    !isKeyBlacklisted(k)
+  );
+
+  return validKeys;
 };
 
-const getRandomKey = (): string => {
-  const keys = getKeyPool();
-  if (keys.length === 0) {
-    // Fail silently in logs, but throw descriptive error for app
-    console.error("System Error: No keys in pool.");
-    throw new Error("Neural Engine Offline: System configuration missing.");
+const isKeyBlacklisted = (key: string): boolean => {
+  if (!failedKeys.has(key)) return false;
+  const timestamp = failedKeys.get(key) || 0;
+  if (Date.now() - timestamp > BLACKLIST_TIMEOUT) {
+    failedKeys.delete(key); // Release key back to pool
+    return false;
   }
-  // Random Load Balancing
-  return keys[Math.floor(Math.random() * keys.length)];
+  return true;
+};
+
+const blacklistKey = (key: string) => {
+  console.warn(`[Cluster] Node Blacklisted due to instability: ${key.substring(0, 8)}...`);
+  failedKeys.set(key, Date.now());
+};
+
+// 3. LOAD BALANCER (ROUND ROBIN)
+const getNextNode = (): string => {
+  const pool = getKeyPool();
+  
+  if (pool.length === 0) {
+    // If all keys are blacklisted or missing, throw critical
+    if (process.env.API_KEY && failedKeys.size > 0) {
+       // Emergency reset if we ran out of keys
+       failedKeys.clear();
+       return getNextNode();
+    }
+    throw new Error("CLUSTER_OFFLINE: No active nodes available. Please configure API_KEY.");
+  }
+
+  // Round Robin Selection
+  const key = pool[keyCursor % pool.length];
+  keyCursor++;
+  return key;
+};
+
+export const getActiveNodeCount = (): number => {
+  return getKeyPool().length;
 };
 
 const getAIInstance = (specificKey?: string) => {
-  const apiKey = specificKey || getRandomKey();
+  const apiKey = specificKey || getNextNode();
   return new GoogleGenAI({ apiKey });
 };
 
-// Advanced Cluster Retry Logic
-// If a key fails (Quota/Limit), we immediately rotate to a fresh key from the pool.
-const retryWithCluster = async <T>(
+// ==========================================
+// EXECUTION PIPELINE
+// ==========================================
+
+const executeOnCluster = async <T>(
   operation: (ai: GoogleGenAI) => Promise<T>, 
-  maxRetries = 3
+  description: string
 ): Promise<T> => {
-  const keys = getKeyPool();
-  let lastError: any;
+  const poolSize = getKeyPool().length;
+  // If we have 100 keys, we can retry many times. If 1 key, strict limits.
+  const maxRetries = Math.max(3, Math.min(poolSize, 10)); 
 
-  // If we only have 1 key, fallback to standard backoff
-  if (keys.length <= 1) {
-      return retryWithBackoff(() => operation(getAIInstance()), 5);
-  }
-
-  // Cluster Mode: Try different keys up to maxRetries
-  for (let i = 0; i < maxRetries; i++) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let currentKey = "";
     try {
-      const currentKey = getRandomKey();
+      currentKey = getNextNode();
       const ai = getAIInstance(currentKey);
       return await operation(ai);
     } catch (error: any) {
-      lastError = error;
       const msg = error.message || '';
-      
-      // If it's a critical error that implies the KEY is bad (Quota/Permission), try next key.
-      if (msg.includes('429') || msg.includes('403') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('PERMISSION_DENIED')) {
-         console.warn(`[Cluster] Node failed. Rerouting to fresh node... (Attempt ${i+1}/${maxRetries})`);
-         continue; 
+      const isAuthError = msg.includes("403") || msg.includes("API key");
+      const isQuotaError = msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED");
+      const isServerError = msg.includes("503") || msg.includes("500");
+
+      if (isAuthError || isQuotaError || isServerError) {
+         console.warn(`[Cluster] Node Failure (${description}): ${msg}. Switching node...`);
+         
+         // If it's a hard failure (Quota/Auth), blacklist this specific key temporarily
+         if (currentKey) blacklistKey(currentKey);
+         
+         // Continue to next iteration (Next Key)
+         continue;
       }
       
-      // If it's a processing error (Safety/Invalid Input), throw immediately.
+      // If it's a prompt safety error or bad request, don't retry
       throw error;
     }
   }
-  throw lastError || new Error("Cluster capacity exhausted.");
+  throw new Error(`Cluster Busy: Unable to complete ${description} after ${maxRetries} node switches.`);
 };
 
-// Fallback for single-key environments
-const retryWithBackoff = async <T>(
-  operation: () => Promise<T>, 
-  maxRetries = 5, 
-  initialDelay = 1000
-): Promise<T> => {
-  let delay = initialDelay;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      const msg = error.message || '';
-      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('503')) {
-        if (i === maxRetries - 1) throw error;
-        console.warn(`[System] Load balancing... ${delay/1000}s`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 1.5;
-      } else {
-        throw error;
-      }
-    }
-  }
-  throw new Error("System busy.");
-};
+// ==========================================
+// PUBLIC METHODS
+// ==========================================
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
   const styles: Record<ThumbnailStyle, string> = {
@@ -102,46 +131,24 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
 };
 
 export const enhancePrompt = async (originalPrompt: string): Promise<string> => {
-  return retryWithCluster(async (ai) => {
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `You are a Lead 3D Artist at a top game studio.
-        Rewrite the following prompt to describe a PHOTOREALISTIC 3D RENDER.
-        The goal is to banish the "lego/toy" look.
-        Focus on: Lighting, Texture Quality, Camera Angle, and Atmosphere.
-        
-        Input: "${originalPrompt}"
-        
-        Output (keep it purely descriptive, no conversational filler):`,
-      });
-      return response.text?.trim() || originalPrompt;
-    } catch (e) {
-      console.error("Prompt enhancement failed", e);
-      return originalPrompt;
-    }
-  });
+  return executeOnCluster(async (ai) => {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Reword this Roblox GFX prompt for maximum photorealism in Blender/Unreal Engine 5: "${originalPrompt}"`,
+    });
+    return response.text?.trim() || originalPrompt;
+  }, "Prompt Enhancement");
 };
 
 export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
-  return retryWithCluster(async (ai) => {
+  return executeOnCluster(async (ai) => {
     
     const styleKeywords = getStylePrompt(config.style);
     
-    // Always prioritize the best visual model for 3D generation
+    // Pro Model for high fidelity, Flash for speed
     const modelName = config.model === 'pro' 
       ? 'gemini-3-pro-image-preview' 
       : 'gemini-2.5-flash-image';
-
-    const characterModelInstruction = `
-      [CHARACTER RENDER RULES]
-      - STYLE: PROFESSIONAL ROBLOX GFX (Blender Cycles / Octane Render).
-      - ANATOMY: Use "BENT LIMBS" style. Joints must be smooth and curved, NOT rigid or sharp. 
-      - PHYSICS: Clothing must have realistic wrinkles, folds, and texture. It should look like fabric, not a texture sticker.
-      - MATERIAL: Skin should look soft (Subsurface Scattering), Armor should look like metal, Hair should have strands.
-      - DO NOT RENDER: Studs on top of heads, sharp blocky corners, flat plastic textures.
-      - EXPRESSION: High-quality 3D face, full of emotion.
-    `;
 
     const finalPrompt = `
       [TASK: GENERATE HYPER-REALISTIC 3D ART]
@@ -154,20 +161,20 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       [VISUAL STYLE: ${config.style.toUpperCase()}]
       ${styleKeywords}
       
-      ${characterModelInstruction}
+      [CHARACTER RULES]
+      - Use "BENT LIMBS" style (smooth joints, no blocky edges).
+      - Realistic fabric textures for clothing.
+      - Subsurface scattering for skin.
+      - High-emotion facial expression.
 
-      [TECHNICAL SPECIFICATIONS]
-      - Renderer: Unreal Engine 5 / Blender Cycles
-      - Lighting: HDRI, Raytracing, Global Illumination, Ambient Occlusion
-      - Camera: Cinematic composition, depth of field, bokeh
-      - Texture Quality: 8K, PBR (Physically Based Rendering)
+      [TECHNICAL]
+      - Unreal Engine 5 render.
+      - Raytracing enabled.
+      - 8K Textures.
       
-      [NEGATIVE PROMPT (THINGS TO AVOID)]
+      [NEGATIVE PROMPT]
       - ${config.negativePrompt || ""}
-      - plastic toy look, lego studs, sharp polygon edges, low poly, pixelated
-      - flat lighting, simple textures, cartoon outlines (unless anime style)
-      - distorted faces, extra limbs, bad anatomy, floating parts
-      - blurry, low resolution, jpeg artifacts
+      - plastic, toy, low poly, pixelated, blur, watermark, text
     `;
 
     const parts: any[] = [];
@@ -181,27 +188,11 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
             data: matches[2],
           },
         });
-        
-        const imageInstruction = `
-          [REFERENCE IMAGE INSTRUCTION]
-          The attached image is the character reference.
-          Keep the character's identity (hair, colors, outfit) BUT UPGRADE THE GRAPHICS.
-          Render this character as a HIGH-BUDGET 3D MODEL.
-          Fix any low-poly edges from the reference. Make the clothing look real. Make the lighting cinematic.
-          Do NOT just copy the low-quality screenshot. RE-IMAGINE it in 8K.
-        `;
-          
-        parts.push({
-          text: `${imageInstruction}\n\n${finalPrompt}`
-        });
-      } else {
-          parts.push({ text: finalPrompt });
+        parts.push({ text: "Use this image as the character reference. Upgrade graphics to 8K photorealism." });
       }
-    } else {
-      parts.push({
-        text: finalPrompt,
-      });
     }
+    
+    parts.push({ text: finalPrompt });
 
     const generationConfig: any = {
       imageConfig: {
@@ -209,50 +200,35 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       },
     };
 
-    if (config.seed) {
-      (generationConfig as any).seed = config.seed; 
-    }
+    if (config.seed) (generationConfig as any).seed = config.seed; 
 
+    // Enable Google Search Tooling ONLY for Pro model
     const tools: any[] = [];
     if (config.model === 'pro') {
       tools.push({ googleSearch: {} }); 
       generationConfig.imageConfig.imageSize = "2K"; 
     }
 
-    try {
-      console.log(`Generating with ${modelName} | Mode: Hyper-Realistic GFX`);
+    console.log(`[Cluster] Job Dispatched to ${modelName} | Node #${keyCursor}`);
 
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: {
-          parts: parts,
-        },
-        config: {
-          ...generationConfig,
-          tools: tools.length > 0 ? tools : undefined
-        },
-      });
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: { parts },
+      config: {
+        ...generationConfig,
+        tools: tools.length > 0 ? tools : undefined
+      },
+    });
 
-      if (response.candidates && response.candidates[0].content.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData && part.inlineData.data) {
-            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-          }
+    if (response.candidates && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
         }
       }
-
-      throw new Error("No image data found.");
-
-    } catch (error: any) {
-      console.error("Gemini Generation Error:", error);
-      let msg = error.message;
-      // Sanitize Error Messages for End User
-      if (msg?.includes("Access Denied") || msg?.includes("API Key")) {
-          msg = "Neural Engine Uplink Failed. The system is re-calibrating. Please try again in 5 seconds.";
-      } else if (msg?.includes("429") || msg?.includes("RESOURCE_EXHAUSTED")) {
-          msg = "High Traffic Volume. The Cluster is auto-scaling. Please retry.";
-      }
-      throw new Error(msg);
     }
-  });
+
+    throw new Error("Render completed but no visual data returned.");
+
+  }, "Image Generation");
 };
