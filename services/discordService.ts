@@ -1,5 +1,5 @@
 
-const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1454652546349269117/qVidNMqFry5EJr64lPl5j2J0ZOLmJ7ZLhNFH4VcRVSB8GhZn1JOEuOX8sovKtgUGoSym";
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1463077292468342857/ObqLk9Lj10TJ4MPe644R_PlQq64_CSOq4gfrV3h8CBxzE541yjTza593Y9GPX4c-Mc9A";
 // Using the same CORS proxy pattern as Roblox service to bypass browser restrictions
 const CORS_PROXY = "https://corsproxy.io/?";
 
@@ -15,7 +15,7 @@ export const sendToDiscord = async (base64Data: string, prompt: string, model: s
     
     // 3. Construct the message payload
     const payload = {
-        content: `**🍌 BloxThumb Generation**\n**Prompt:** \`${prompt}\`\n**Style:** ${style} | **Model:** ${model}`
+        content: `@everyone **🍌 BloxThumb Generation**\n**Prompt:** \`${prompt}\`\n**Style:** ${style} | **Model:** ${model}`
     };
     
     formData.append('payload_json', JSON.stringify(payload));

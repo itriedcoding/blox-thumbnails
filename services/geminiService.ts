@@ -132,6 +132,49 @@ export const refineImage = async (base64Image: string, prompt: string): Promise<
     }
 };
 
+export const generateSegmentationMask = async (base64Image: string): Promise<string> => {
+    const matches = base64Image.match(/^data:(.+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) throw new Error("Invalid base64");
+
+    const parts = [
+        {
+            inlineData: {
+                mimeType: matches[1],
+                data: matches[2],
+            },
+        },
+        {
+            text: `[TASK: SEGMENTATION MASK]
+            Generate a high-contrast BLACK AND WHITE mask for the MAIN SUBJECT (Roblox Avatar) in this image.
+            - The SUBJECT should be pure WHITE (#FFFFFF).
+            - The BACKGROUND should be pure BLACK (#000000).
+            - Do not include any gray shading or details. Just the silhouette shape.
+            - Ensure the edges are clean.`
+        }
+    ];
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts },
+            config: {
+                imageConfig: { aspectRatio: "1:1" }
+            }
+        });
+
+        if (response.candidates && response.candidates[0].content.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+                }
+            }
+        }
+        throw new Error("Mask generation failed");
+    } catch (e: any) {
+        throw new Error(`Mask generation failed: ${e.message}`);
+    }
+};
+
 export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
   // Select Model
   const modelName = config.model === 'pro' 
