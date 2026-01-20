@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount, expandPrompt } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect, AspectRatio } from '../types';
 import { ImageEditor } from './ImageEditor';
 import { playSound } from '../App';
 
@@ -26,7 +26,7 @@ const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
 ];
 
 const POSES = [
-    { id: 'auto', label: '✨ AI Match', icon: '🧠' },
+    { id: 'auto', label: '🧠 AI Auto', icon: '✨' },
     { id: 'standing', label: 'Idle', icon: '🧍' },
     { id: 'fighting_stance', label: 'Combat', icon: '🥊' },
     { id: 'running', label: 'Run', icon: '🏃' },
@@ -36,6 +36,7 @@ const POSES = [
 ];
 
 const EXPRESSIONS = [
+    { id: 'auto', label: 'AI Auto', icon: '🧠' },
     { id: 'default', label: 'Default', icon: '😐' },
     { id: 'shocked', label: 'Shocked', icon: '😱' },
     { id: 'happy', label: 'Joy', icon: '😁' },
@@ -45,7 +46,8 @@ const EXPRESSIONS = [
 ];
 
 const LIGHTING = [
-    { id: 'default', label: 'Auto' },
+    { id: 'auto', label: '✨ AI Auto' },
+    { id: 'default', label: 'Standard' },
     { id: 'neon-studio', label: 'Neon Studio' },
     { id: 'sun-drenched', label: 'Sun Drenched' },
     { id: 'dark-void', label: 'Dark Void' },
@@ -53,6 +55,7 @@ const LIGHTING = [
 ];
 
 const PARTICLES: {id: ParticleEffect, label: string}[] = [
+    { id: 'auto', label: '✨ AI Auto' },
     { id: 'none', label: 'None' },
     { id: 'sparkles', label: '✨ Sparkles' },
     { id: 'fire', label: '🔥 Fire' },
@@ -86,15 +89,15 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [showHistory, setShowHistory] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'prompt' | 'avatar'>('prompt');
-  const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("auto");
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
   const [avatarModel, setAvatarModel] = useState<AvatarModel>('R15'); 
   const [pose, setPose] = useState<string>('auto');
   
-  const [expression, setExpression] = useState<FaceExpression>('default');
-  const [lighting, setLighting] = useState<LightingPreset>('default');
-  const [particles, setParticles] = useState<ParticleEffect>('none');
+  const [expression, setExpression] = useState<FaceExpression>('auto');
+  const [lighting, setLighting] = useState<LightingPreset>('auto');
+  const [particles, setParticles] = useState<ParticleEffect>('auto');
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0); 
@@ -113,9 +116,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           setModel(remixConfig.model);
           setAvatarModel(remixConfig.avatarModel);
           setPose(remixConfig.pose || 'auto');
-          setExpression(remixConfig.expression || 'default');
-          setLighting(remixConfig.lighting || 'default');
-          setParticles(remixConfig.particles || 'none');
+          setExpression(remixConfig.expression || 'auto');
+          setLighting(remixConfig.lighting || 'auto');
+          setParticles(remixConfig.particles || 'auto');
           if (remixConfig.seed) setSeed(remixConfig.seed);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           playSound('blip');
@@ -167,6 +170,26 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleImageUrlChange = async () => {
+      if (!customImageUrl) return;
+      // Basic client-side check, robust fetch happens in generation or we just pass URL if model supported it (but currently we need base64 usually)
+      // For now, we just assume the user will input a valid URL that the browser can fetch or we pass it directly?
+      // Actually, standard `generateContent` might not accept external URLs directly in parts without fetching.
+      // We will try to fetch it to convert to base64 for consistency.
+      try {
+          const res = await fetch(customImageUrl);
+          const blob = await res.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setReferenceImage(reader.result as string);
+              setAvatarData(null);
+          };
+          reader.readAsDataURL(blob);
+      } catch (e) {
+          setError("Failed to load image from URL. Check CORS or use Upload.");
+      }
   };
   
   const fetchAvatar = async () => {
@@ -332,7 +355,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     <div>
                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Aspect Ratio</label>
                          <div className="flex gap-3 bg-black/30 p-1.5 rounded-xl border border-white/5">
-                            {[{v:"16:9", l:"Landscape"}, {v:"1:1", l:"Square"}, {v:"9:16", l:"Portrait"}].map(r => (
+                            {[{v:"auto", l:"🧠 AI Auto"}, {v:"16:9", l:"16:9"}, {v:"1:1", l:"1:1"}, {v:"9:16", l:"9:16"}].map(r => (
                                 <button key={r.v} onClick={() => setAspectRatio(r.v as any)} className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${aspectRatio === r.v ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}>{r.l}</button>
                             ))}
                          </div>
@@ -414,13 +437,34 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
 
                     {activeTab === 'avatar' && (
                         <div className="animate-fade-in-up space-y-4">
-                            <div className="flex gap-2">
-                                <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Roblox Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none" onKeyDown={(e) => e.key === 'Enter' && fetchAvatar()} />
-                                <button onClick={fetchAvatar} disabled={isFetchingAvatar1} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">{isFetchingAvatar1 ? '...' : 'GET'}</button>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-bold uppercase text-slate-500">Roblox User</label>
+                                <div className="flex gap-2">
+                                    <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none" onKeyDown={(e) => e.key === 'Enter' && fetchAvatar()} />
+                                    <button onClick={fetchAvatar} disabled={isFetchingAvatar1} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">{isFetchingAvatar1 ? '...' : 'GET'}</button>
+                                </div>
                             </div>
-                            <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">📁 Upload PNG</button>
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                            {referenceImage && <img src={referenceImage} className="w-full h-40 object-contain bg-black/50 rounded-lg border border-white/10" />}
+                            
+                            <div className="space-y-2 pt-2 border-t border-white/5">
+                                <label className="text-[9px] font-bold uppercase text-slate-500">Direct Upload</label>
+                                <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">📁 Upload PNG</button>
+                                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t border-white/5">
+                                <label className="text-[9px] font-bold uppercase text-slate-500">Image URL</label>
+                                <div className="flex gap-2">
+                                    <input type="text" value={customImageUrl} onChange={(e) => setCustomImageUrl(e.target.value)} placeholder="https://..." className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none" />
+                                    <button onClick={handleImageUrlChange} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">Load</button>
+                                </div>
+                            </div>
+
+                            {referenceImage && (
+                                <div className="relative mt-2">
+                                    <img src={referenceImage} className="w-full h-40 object-contain bg-black/50 rounded-lg border border-white/10" />
+                                    <button onClick={() => setReferenceImage(null)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -437,7 +481,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     disabled={isGenerating} 
                     className={`w-full py-8 rounded-[2rem] font-black text-2xl uppercase tracking-[0.25em] shadow-2xl transition-all relative overflow-hidden group ${isGenerating ? 'bg-[#0a0a10] cursor-not-allowed border border-white/5' : 'bg-white text-black hover:scale-[1.02]'}`}
                 >
-                    <span className="relative z-10">{isGenerating ? `Running ${Math.round(progress)}%` : 'INITIALIZE'}</span>
+                    <span className="relative z-10">
+                        {isGenerating ? (
+                            progress < 10 ? 'Analyzing Prompt...' : 
+                            progress < 30 ? 'Inferring Config...' :
+                            `Rendering ${Math.round(progress)}%`
+                        ) : 'INITIALIZE'}
+                    </span>
                     {isGenerating && <div className="absolute bottom-0 left-0 h-1.5 bg-neon-blue transition-all duration-300" style={{ width: `${progress}%` }}></div>}
                 </button>
                 {error && <div className="text-center text-red-400 text-xs font-bold uppercase mt-2">{error}</div>}

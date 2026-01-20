@@ -3,9 +3,12 @@ export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rp
 export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R6' | 'R15' | 'Rthro';
 export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy' | 'updates';
-export type FaceExpression = 'default' | 'shocked' | 'happy' | 'angry' | 'evil' | 'crying' | 'sigma' | 'silly';
-export type LightingPreset = 'default' | 'neon-studio' | 'sun-drenched' | 'dark-void' | 'god-rays' | 'cyber-punk' | 'soft-box';
-export type ParticleEffect = 'none' | 'sparkles' | 'fire' | 'money' | 'glitch' | 'lightning' | 'pet-trail' | 'hearts';
+
+// Added 'auto' to all configurable types
+export type FaceExpression = 'auto' | 'default' | 'shocked' | 'happy' | 'angry' | 'evil' | 'crying' | 'sigma' | 'silly';
+export type LightingPreset = 'auto' | 'default' | 'neon-studio' | 'sun-drenched' | 'dark-void' | 'god-rays' | 'cyber-punk' | 'soft-box';
+export type ParticleEffect = 'auto' | 'none' | 'sparkles' | 'fire' | 'money' | 'glitch' | 'lightning' | 'pet-trail' | 'hearts';
+export type AspectRatio = 'auto' | '16:9' | '1:1' | '9:16';
 
 declare global {
   interface AIStudio {
@@ -39,7 +42,7 @@ export interface ThumbnailConfig {
   negativePrompt?: string;
   referenceImage?: string; // Base64 string
   secondReferenceImage?: string; // Base64 string for 2nd avatar
-  aspectRatio: "16:9" | "1:1" | "9:16";
+  aspectRatio: AspectRatio;
   style: ThumbnailStyle;
   model: ModelType;
   avatarModel: AvatarModel;

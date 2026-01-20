@@ -1,5 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset, ParticleEffect } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
+import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset, ParticleEffect, AspectRatio } from "../types";
 
 // ==========================================
 // 🚀 GEMINI SERVICE (STANDARD)
@@ -92,6 +92,49 @@ const ROBLOX_VISUAL_ELEMENTS = [
     "Neon Floating Platforms",
     "Shiny Diamond Sword on back"
 ];
+
+// ==========================================
+// 🧠 NEURAL CONFIGURATION ENGINE
+// ==========================================
+
+export const inferThumbnailConfig = async (prompt: string): Promise<Partial<ThumbnailConfig>> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Analyze this Roblox thumbnail prompt: "${prompt}".
+            Determine the best settings to maximize Click-Through Rate (CTR).
+            
+            Return JSON matching this schema:
+            {
+                "expression": "shocked" | "happy" | "angry" | "evil" | "crying" | "sigma" | "silly" | "default",
+                "lighting": "neon-studio" | "sun-drenched" | "dark-void" | "god-rays" | "cyber-punk" | "soft-box" | "default",
+                "particles": "sparkles" | "fire" | "money" | "glitch" | "lightning" | "pet-trail" | "hearts" | "none",
+                "pose": "standing" | "fighting_stance" | "running" | "jumping" | "scared" | "driving",
+                "aspectRatio": "16:9" | "1:1" | "9:16"
+            }
+            `,
+            config: {
+                responseMimeType: "application/json",
+            }
+        });
+        
+        const jsonText = response.text || "{}";
+        return JSON.parse(jsonText);
+    } catch (e) {
+        console.warn("Config Inference Failed, using defaults", e);
+        return {
+            expression: 'default',
+            lighting: 'default',
+            particles: 'none',
+            pose: 'standing',
+            aspectRatio: '16:9'
+        };
+    }
+};
+
+// ==========================================
+// UTILITIES
+// ==========================================
 
 export const generateRandomPrompt = async (): Promise<string> => {
   try {
@@ -240,6 +283,23 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   const modelName = config.model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';    
   const isHighCtr = config.style === 'high-ctr' || config.style === 'simulator' || config.style === 'obby';
 
+  // NEURAL AUTO-CONFIGURATION
+  // If any setting is 'auto', we infer it first.
+  let effectiveConfig = { ...config };
+  
+  if (config.expression === 'auto' || config.lighting === 'auto' || config.particles === 'auto' || config.pose === 'auto' || config.aspectRatio === 'auto') {
+      const inferred = await inferThumbnailConfig(config.prompt);
+      
+      if (config.expression === 'auto') effectiveConfig.expression = inferred.expression as FaceExpression;
+      if (config.lighting === 'auto') effectiveConfig.lighting = inferred.lighting as LightingPreset;
+      if (config.particles === 'auto') effectiveConfig.particles = inferred.particles as ParticleEffect;
+      if (config.pose === 'auto') effectiveConfig.pose = inferred.pose;
+      if (config.aspectRatio === 'auto') effectiveConfig.aspectRatio = (inferred.aspectRatio || "16:9") as AspectRatio;
+  }
+
+  // Ensure Fallbacks if inference missed something
+  if (effectiveConfig.aspectRatio === 'auto') effectiveConfig.aspectRatio = '16:9';
+
   let avatarSpecs = config.avatarModel === 'R6' ? 'Classic R6 Blocky' : config.avatarModel === 'R15' ? 'Modern R15 Segmented' : 'Realistic Rthro';
   
   // ROBLOX ALGORITHM INJECTION LOGIC
@@ -251,12 +311,12 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
 
   const finalPrompt = `
     [TASK] Generate a ${isHighCtr ? 'HIGH QUALITY ROBLOX GAME ICON' : 'Cinematic'} 3D Render.
-    [SUBJECT] High-fidelity Roblox Avatar (${avatarSpecs}).
+    [SUBJECT] High-fidelity Roblox Avatar (${avatarSpecs}) in ${effectiveConfig.pose || 'Action Pose'}.
     [SCENE] ${config.prompt}
     [STYLE] ${getStylePrompt(config.style)}
-    ${getExpressionPrompt(config.expression)}
-    ${getLightingPrompt(config.lighting)}
-    ${getParticlePrompt(config.particles)}
+    ${getExpressionPrompt(effectiveConfig.expression)}
+    ${getLightingPrompt(effectiveConfig.lighting)}
+    ${getParticlePrompt(effectiveConfig.particles)}
     ${viralInjection}
     [CAMERA] ${isHighCtr ? 'Dynamic Angle, Focused on Character, Depth of Field' : 'Cinematic Composition, Rule of Thirds'}
     [RENDER] Blender Cycles, 8K Resolution, High Poly, Ambient Occlusion.
@@ -276,7 +336,10 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   }
   parts.push({ text: finalPrompt });
 
-  const generationConfig: any = { imageConfig: { aspectRatio: config.aspectRatio } };
+  const generationConfig: any = { 
+      imageConfig: { aspectRatio: effectiveConfig.aspectRatio } 
+  };
+  
   if (config.seed) generationConfig.seed = config.seed; 
   if (config.model === 'pro') generationConfig.imageConfig.imageSize = "2K"; 
 
