@@ -34,13 +34,13 @@ export const getActiveNodeCount = (): number => {
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
   const styles: Record<ThumbnailStyle, string> = {
-    cinematic: "MASTERPIECE BLENDER GFX. Cycles Render. Cinematic Lighting. Volumetric Fog. 8K UHD. High resolution textures. Ambient Occlusion.",
-    simulator: "ROBLOX SIMULATOR STYLE. Bright, vibrant colors. Smooth shading. Sun flares. Clean vector-like aesthetic but 3D. Commercial polish.",
-    obby: "NEON OBBY AESTHETIC. Glowing parts. High contrast. Dynamic perspective. Speed lines. Floating platforms background.",
-    horror: "ROBLOX HORROR. Dark atmosphere. Film grain. Spotlight lighting. Grimy textures. Unsettling vibe. PBR materials.",
-    rpg: "FANTASY RPG. Magic particle effects. Glowing weapons. Epic atmosphere. Detailed armor textures. God rays.",
-    anime: "ROBLOX ANIME. Cel-shaded visual effects. Dynamic action lines. Over-the-top energy auras. Intense lighting.",
-    "high-ctr": "VIRAL YOUTUBE THUMBNAIL. High saturation. Expressive. Contrast boost. Sharp focus. Eye-catching composition."
+    cinematic: "PHOTOREALISTIC CINEMATIC. 8K. Depth of Field. Bokeh. Color Graded. Movie Poster Quality. Dramatic Shadows. Anamorphic Lens Flares.",
+    simulator: "HIGH-END 3D RENDER. Vibrant but Realistic Lighting. Soft Shadows. Ambient Occlusion. Detailed Background. Clean Composition. Commercial CGI.",
+    obby: "DYNAMIC ACTION RENDER. Motion Blur. High Contrast. Neon Lighting interacting with realistic materials. Glossy reflections. Raytraced.",
+    horror: "PHOTOREALISTIC HORROR. Grimy textures. Rust. Blood/Dirt decals. Volumetric fog. Low key lighting. Unsettling realism. Film Grain.",
+    rpg: "FANTASY REALISM. Magic effects with particle lighting. Metallic armor reflections with scratches. Detailed environment textures. Epic scale. God Rays.",
+    anime: "HIGH FIDELITY ANIME 3D. Stylized realism. Detailed particle effects. Glowing auras. Vibrant colors but realistic shading and material response.",
+    "high-ctr": "VIRAL YOUTUBE THUMBNAIL. Hyper-saturated. Extremely Sharp. Exaggerated Lighting. High Detail. Face focus. Rim Lighting."
   };
   return styles[style] || styles.cinematic;
 };
@@ -49,11 +49,11 @@ export const generateRandomPrompt = async (): Promise<string> => {
   try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate a VIRAL, HIGH-CTR Roblox thumbnail prompt.
-        It must be catchy, exciting, and describe a scene that would get clicks on YouTube.
+        contents: `Generate a VIRAL, HIGH-CTR, HYPER-REALISTIC Roblox thumbnail prompt.
+        It must be catchy, exciting, and describe a scene with realistic lighting and materials.
         Examples: 
-        - "SHOCKED Roblox Noob finding a SECRET GOLDEN EGG in a forest"
-        - "Giant Red Monster chasing a scared Roblox Avatar in a maze"
+        - "Hyper-realistic Roblox Noob finding a glowing golden egg in a detailed forest with god rays"
+        - "Giant Red Monster with realistic fur chasing a Roblox Avatar in a rainy neon city"
         
         Output ONLY the prompt text. No intro. No outro.`,
       });
@@ -68,15 +68,15 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `You are a Roblox GFX Artist.
+      contents: `You are a professional 3D Artist specializing in Roblox GFX.
       
-      Task: Optimize this prompt for a high-quality Blender render of a Roblox scene.
+      Task: Optimize this prompt for a Hyper-Realistic 8K Blender Cycles render of a Roblox scene.
       Input: "${originalPrompt}"
       
       Guidelines:
-      1. Keep it concise but descriptive.
-      2. Add lighting and camera keywords (e.g., "rim lighting", "low angle").
-      3. Ensure it emphasizes "Roblox Avatar" and "3D Render".
+      1. Add keywords for photorealism: "8k", "raytracing", "pbr textures", "volumetric lighting".
+      2. Describe materials (e.g., "scratched metal", "woven fabric", "subsurface scattering on skin").
+      3. Keep the core Roblox identity but elevate the rendering quality to "Movie Grade".
       
       Output ONLY the enhanced prompt.`,
     });
@@ -103,7 +103,7 @@ export const refineImage = async (base64Image: string, prompt: string): Promise<
             Input is a Roblox GFX render. 
             ACTION: Increase resolution, sharpen textures, fix any mesh artifacts, improve lighting quality.
             MAINTAIN: The exact composition, poses, and colors. Do not change the subject.
-            STYLE: 8K Blender Cycles Render.
+            STYLE: 8K Photorealistic Blender Render. PBR Materials. Remove any plastic/toy look.
             CONTEXT: ${prompt}`
         }
     ];
@@ -141,53 +141,59 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   let avatarSpecs = "";
   if (config.avatarModel === 'R6') {
     avatarSpecs = `
-      - TYPE: CLASSIC ROBLOX R6
-      - GEOMETRY: Blocky torso, simple blocky limbs. No knees, no elbows.
-      - AESTHETIC: Iconic "Old Roblox" look but with high-quality rendering.
-      - TEXTURES: Clean, sharp, standard Roblox textures.
+      - TYPE: CLASSIC ROBLOX R6 (High Fidelity Remaster)
+      - GEOMETRY: Classic blocky proportions but with bevelled edges to catch light.
+      - AESTHETIC: Premium 3D Render. Not a cheap toy.
+      - TEXTURES: 4K PBR textures, detailed fabric weaves on clothing, realistic skin shader.
     `;
   } else if (config.avatarModel === 'R15') {
     avatarSpecs = `
-      - TYPE: MODERN ROBLOX R15
-      - GEOMETRY: 15 distinct body parts. Segmented arms and legs (visible joints).
-      - AESTHETIC: Standard modern Roblox avatar. Sharp edges on body parts.
-      - TEXTURES: High fidelity clothing textures applied to the blocky mesh.
+      - TYPE: MODERN ROBLOX R15 (Cinema Quality)
+      - GEOMETRY: 15-part segmented body with high-poly bevels.
+      - AESTHETIC: Hyper-realistic CGI character.
+      - TEXTURES: Imperfections, surface details, realistic cloth folds, subsurface scattering on skin.
     `;
   } else {
     avatarSpecs = `
-      - TYPE: ROBLOX RTHRO
-      - GEOMETRY: Humanoid proportions but stylized. Smooth joints.
-      - AESTHETIC: Realistic Roblox avatar style.
+      - TYPE: ROBLOX RTHRO (Photoreal)
+      - GEOMETRY: Humanoid proportions with smooth realistic joints.
+      - AESTHETIC: AAA Game Character quality.
+      - TEXTURES: Ultra-detailed skin pores, realistic eyes, hair strands.
     `;
   }
 
   const finalPrompt = `
     [TASK]
-    Create a High-Quality 3D Roblox GFX Thumbnail (8K Resolution).
-    The image MUST feature a Roblox Avatar. It must look authentically like the game Roblox, rendered in software like Blender (Cycles) or Cinema 4D.
+    Generate a Hyper-Realistic 8K 3D Render of a Roblox Scene (Blender Cycles / Unreal Engine 5).
+    
+    [SUBJECT]
+    A high-fidelity Roblox Avatar. 
+    DO NOT generate a plastic toy or a simple Lego figure.
+    The avatar should look like a high-budget CGI movie character based on Roblox design.
+    
+    [VISUAL STYLE]
+    - RENDER ENGINE: Unreal Engine 5 / Blender Cycles.
+    - LIGHTING: Global Illumination, Ray Tracing, Volumetric Fog, Cinematic Rim Lighting.
+    - MATERIALS: Physically Based Rendering (PBR). Metal looks like metal, cloth looks like cloth, skin has subsurface scattering.
+    - DETAIL: Micro-scratches, dust particles, fabric weave, detailed hair.
     
     [AVATAR SPECIFICATIONS]
     ${avatarSpecs}
     
-    [CRITICAL RULES]
-    1. NO "Melting Plastic" look. Edges should be defined.
-    2. NO Generic 3D Humans. Must be a ROBLOX AVATAR.
-    3. NO Low-poly artifacts. Use high-resolution textures.
-    4. Materials should look like high-quality digital assets (GFX), not cheap physical toys.
-    
-    [SCENE]
+    [SCENE DESCRIPTION]
     ${config.prompt}
     
-    [ADDITIONAL DETAILS]
-    ${config.secondReferenceImage ? "- Features TWO Roblox avatars interacting." : "- Features the main Roblox avatar."}
-    ${config.pose ? `- Pose: ${config.pose}` : "- Dynamic Pose"}
+    [COMPOSITION]
+    ${config.secondReferenceImage ? "- Features TWO avatars interacting dynamically." : "- Focus on the main avatar."}
+    ${config.pose ? `- POSE: ${config.pose}` : "- POSE: Dynamic, Action-oriented"}
+    - CAMERA: ${config.aspectRatio === '16:9' ? 'Cinematic Wide Angle' : 'Portrait Focus'}
     
     [STYLE: ${config.style.toUpperCase()}]
     ${getStylePrompt(config.style)}
     
     [NEGATIVE PROMPT]
     ${config.negativePrompt || ""}
-    cheap plastic, melted, distorted, bad anatomy, realistic human, photograph, fuzzy textures, low resolution, blurry, watermark, text, ui, hud, deformed
+    plastic, toy, lego, low resolution, pixelated, flat lighting, cartoon, simple, blur, noise, watermark, text, ui, distorted, bad anatomy, melting, low poly, cheap
   `;
 
   const parts: any[] = [];
@@ -196,7 +202,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   if (config.referenceImage) {
     if (config.referenceImage.startsWith('http')) {
        parts.push({ text: `Reference Image URL (Main Character): ${config.referenceImage}` });
-       parts.push({ text: "Use this Roblox avatar as the main subject. Keep the outfit and colors accurate." });
+       parts.push({ text: "Use this Roblox avatar as the main subject. Keep the outfit and colors accurate but upgrade the materials to PBR." });
     } else {
         const matches = config.referenceImage.match(/^data:(.+);base64,(.+)$/);
         if (matches && matches.length === 3) {
@@ -206,7 +212,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
               data: matches[2],
             },
           });
-          parts.push({ text: "Use this image as the MAIN ROBLOX AVATAR reference. Keep the outfit/accessories." });
+          parts.push({ text: "Use this image as the MAIN ROBLOX AVATAR reference. Keep the outfit/accessories but render them with high realism." });
         }
     }
   }
