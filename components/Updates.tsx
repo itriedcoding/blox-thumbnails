@@ -11,27 +11,35 @@ interface VersionUpdate {
 
 const UPDATES: VersionUpdate[] = [
     {
-        version: "8.8.0",
+        version: "10.0.0",
         date: "Today",
         isMajor: true,
         changes: [
-            "ADDED: Particle FX System - Inject 3D particles directly into renders (Sparkles, Money, Fire, Glitch)",
-            "REWORKED: High-CTR Engine V3 - Now optimized purely for Roblox Discovery Algorithm (No YouTube tropes)",
-            "IMPROVED: Viral Element Injector - Replaced text spam with visual motifs (Floating Pets, Speed Trails)",
-            "IMPROVED: Lighting & Shading - Updated to match Blender Cycles 4.0 glossy plastic aesthetic"
+            "REMOVED: Generic 'Toy' Textures - Now using authentic Roblox Studio material definitions (SmoothPlastic, Neon, Slate)",
+            "IMPROVED: R6/R15 Fidelity - Neural Engine now strictly enforces 6-joint or 15-joint geometry constraints",
+            "ADDED: Material Shader System - Prompts now explicitly call for Roblox-specific material shaders",
+            "FIXED: Organic Curves - Eliminated unwanted 'human-like' roundness in blocky avatars"
         ]
     },
     {
-        version: "8.7.0",
-        date: "Previous",
+        version: "9.5.0",
+        date: "Yesterday",
         isMajor: true,
         changes: [
-            "ADDED: Hyper-CTR Engine - Advanced prompt injection for viral thumbnails",
-            "ADDED: Face Rig - Force specific avatar emotions (Shocked, Sigma, Crying, Rage)",
-            "ADDED: Lighting Studio - Control environmental lighting (Neon Studio, God Rays, Dark Void)",
-            "ADDED: Viral Keyword Injector - Automatically adds high-impact text to prompts in High-CTR mode",
-            "IMPROVED: Prompt Engineering Logic - Smarter token placement for higher fidelity",
-            "IMPROVED: UI Layout for Advanced Controls"
+            "ADDED: Generative Edit - AI-powered 'Magic Edit' tool in the image editor",
+            "ADDED: Smart Avatar Sync - Dedicated Roblox Username input for higher fidelity character matching",
+            "IMPROVED: Editor UI - New toolbar layout with Stickers, Backgrounds, and Text gradients",
+            "ADDED: Atmosphere Overlays - Rain, Snow, and Safe Zone guides"
+        ]
+    },
+    {
+        version: "8.8.0",
+        date: "Previous",
+        isMajor: false,
+        changes: [
+            "ADDED: Particle FX System - Inject 3D particles directly into renders (Sparkles, Money, Fire, Glitch)",
+            "REWORKED: High-CTR Engine V3 - Now optimized purely for Roblox Discovery Algorithm",
+            "IMPROVED: Viral Element Injector - Replaced text spam with visual motifs (Floating Pets, Speed Trails)"
         ]
     }
 ];
@@ -112,6 +120,8 @@ export const Updates: React.FC = () => {
                                             <span><span className="text-neon-green font-bold text-xs">ADDED</span> {change.replace("ADDED:", "")}</span>
                                         ) : change.startsWith("IMPROVED") ? (
                                             <span><span className="text-neon-blue font-bold text-xs">IMPROVED</span> {change.replace("IMPROVED:", "")}</span>
+                                        ) : change.startsWith("REMOVED") ? (
+                                            <span><span className="text-red-500 font-bold text-xs">REMOVED</span> {change.replace("REMOVED:", "")}</span>
                                         ) : change.startsWith("FIXED") ? (
                                             <span><span className="text-yellow-500 font-bold text-xs">FIXED</span> {change.replace("FIXED:", "")}</span>
                                         ) : (

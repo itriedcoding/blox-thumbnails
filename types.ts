@@ -99,3 +99,6 @@ export interface Sticker {
 
 export type FilterPreset = 'none' | 'matrix' | 'warm' | 'cool' | 'vintage' | 'pixelate' | 'blur';
 export type OverlayType = 'none' | 'vignette' | 'scanlines' | 'noise' | 'rain' | 'snow' | 'embers';
+
+// Updated Editor Tool Types
+export type EditorTool = 'move' | 'eraser' | 'magic-wand' | 'text' | 'sticker' | 'background' | 'ai-edit';

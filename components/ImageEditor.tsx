@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sticker, FilterPreset, OverlayType } from '../types';
-import { generateSegmentationMask, generateBackgroundImage } from '../services/geminiService';
+import { Sticker, EditorTool, OverlayType } from '../types';
+import { generateSegmentationMask, generateBackgroundImage, generativeEdit } from '../services/geminiService';
 import { playSound } from '../App';
 
 interface ImageEditorProps {
@@ -9,7 +9,6 @@ interface ImageEditorProps {
   onSave: (data: string) => void;
 }
 
-type ToolType = 'move' | 'eraser' | 'magic-wand' | 'text' | 'sticker' | 'background';
 type TextGradient = 'none' | 'gold' | 'silver' | 'neon-fire';
 
 const STICKER_CATEGORIES = {
@@ -29,7 +28,7 @@ const STICKER_CATEGORIES = {
 export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose, onSave }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const [activeTool, setActiveTool] = useState<ToolType>('move');
+  const [activeTool, setActiveTool] = useState<EditorTool>('move');
   const [isProcessing, setIsProcessing] = useState(false);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyStep, setHistoryStep] = useState(-1);
@@ -45,6 +44,8 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
   const [bgColor, setBgColor] = useState('#000000');
   const [bgType, setBgType] = useState<'transparent' | 'color' | 'image'>('transparent');
   const [bgPrompt, setBgPrompt] = useState('');
+
+  const [aiEditPrompt, setAiEditPrompt] = useState('');
 
   const [text, setText] = useState('');
   const [textPos, setTextPos] = useState({ x: 50, y: 50 });
@@ -125,7 +126,6 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
      }
   };
 
-  // ... (Existing Draw/Wand Logic Preserved but omitted for brevity if unchanged, inserting full logic for safety)
   const handleDraw = (e: React.MouseEvent) => {
       if (activeTool !== 'eraser') return;
       if (e.buttons !== 1) return;
@@ -184,33 +184,28 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
       playSound('success');
   };
 
-  const handleAutoRemove = async () => {
-      if (!canvasRef.current || isProcessing) return;
+  const handleAiEdit = async () => {
+      if (!aiEditPrompt.trim() || !canvasRef.current) return;
       setIsProcessing(true);
       playSound('blip');
       try {
-          const currentDataUrl = canvasRef.current.toDataURL('image/png');
-          const maskDataUrl = await generateSegmentationMask(currentDataUrl);
-          const maskImg = new Image();
-          maskImg.src = maskDataUrl;
-          maskImg.onload = () => {
-              const canvas = canvasRef.current!;
-              const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-              const tCanvas = document.createElement('canvas');
-              tCanvas.width = canvas.width; tCanvas.height = canvas.height;
-              tCanvas.getContext('2d')!.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
-              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const maskData = tCanvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
-              for (let i = 0; i < imgData.data.length; i += 4) {
-                  const brightness = (maskData.data[i] + maskData.data[i+1] + maskData.data[i+2]) / 3;
-                  if (brightness < 128) imgData.data[i+3] = 0; 
+          const currentData = canvasRef.current.toDataURL('image/png');
+          const newData = await generativeEdit(currentData, aiEditPrompt);
+          const img = new Image();
+          img.src = newData;
+          img.onload = () => {
+              if (canvasRef.current) {
+                  const ctx = canvasRef.current.getContext('2d')!;
+                  ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+                  saveHistory();
+                  setIsProcessing(false);
+                  playSound('success');
               }
-              ctx.putImageData(imgData, 0, 0);
-              saveHistory();
-              setIsProcessing(false);
-              playSound('success');
-          };
-      } catch (e) { setIsProcessing(false); alert("AI Removal Failed."); }
+          }
+      } catch (e) {
+          setIsProcessing(false);
+          alert("AI Edit Failed: " + (e as any).message);
+      }
   };
 
   const handleGenerateBackground = async () => {
@@ -293,7 +288,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
             {/* Toolbar */}
             <div className="w-full md:w-24 bg-[#15151a] border-r border-white/5 flex md:flex-col items-center py-6 gap-4 z-20">
                 <div className="mb-4 hidden md:block w-10 h-10 rounded-xl bg-neon-blue flex items-center justify-center text-black font-black">B</div>
-                {[{id:'move',icon:'✋'}, {id:'magic-wand',icon:'🪄'}, {id:'eraser',icon:'🧹'}, {id:'background',icon:'🖼️'}, {id:'text',icon:'T'}, {id:'sticker',icon:'🙂'}].map(t => (
+                {[{id:'move',icon:'✋'}, {id:'ai-edit', icon:'✨'}, {id:'magic-wand',icon:'🪄'}, {id:'eraser',icon:'🧹'}, {id:'background',icon:'🖼️'}, {id:'text',icon:'T'}, {id:'sticker',icon:'🙂'}].map(t => (
                     <button key={t.id} onClick={() => setActiveTool(t.id as any)} className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all ${activeTool === t.id ? 'bg-white text-black' : 'bg-white/5 text-slate-400'}`}>{t.icon}</button>
                 ))}
                 <div className="flex-1"></div>
@@ -341,13 +336,40 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                         {text.toUpperCase()}
                     </div>
                 )}
-                {isProcessing && <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center text-white font-bold">PROCESSING...</div>}
+                {isProcessing && <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center text-white font-bold animate-pulse">
+                    <div className="bg-black border border-white/20 px-8 py-4 rounded-xl">
+                        AI PROCESSING...
+                    </div>
+                </div>}
             </div>
 
             {/* Properties */}
             <div className="w-full md:w-80 bg-[#15151a] border-l border-white/5 p-6 overflow-y-auto custom-scrollbar">
                 <div className="flex justify-between mb-6"><h3 className="font-bold text-white uppercase">Properties</h3><button onClick={onClose} className="text-red-400 text-xs">EXIT</button></div>
                 
+                {/* AI EDIT PANEL */}
+                {activeTool === 'ai-edit' && (
+                     <div className="space-y-4 animate-fade-in-up">
+                         <div className="bg-gradient-to-r from-neon-blue/20 to-purple-500/20 p-4 rounded-xl border border-neon-blue/30">
+                            <h4 className="text-xs font-bold text-neon-blue uppercase mb-2">✨ Generative Reforge</h4>
+                            <p className="text-[10px] text-slate-300 mb-3 leading-relaxed">Describe changes to the image. The AI will redraw the scene while keeping the layout.</p>
+                            <textarea 
+                                value={aiEditPrompt}
+                                onChange={(e) => setAiEditPrompt(e.target.value)}
+                                placeholder="e.g., Change the background to a snowy mountain, make the sword glow red..."
+                                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-xs text-white mb-3 min-h-[80px]"
+                            />
+                            <button 
+                                onClick={handleAiEdit}
+                                disabled={isProcessing}
+                                className="w-full py-2 bg-white text-black font-bold text-[10px] uppercase rounded hover:bg-neon-blue transition-colors disabled:opacity-50"
+                            >
+                                {isProcessing ? 'Generating...' : 'Apply Magic Edit'}
+                            </button>
+                         </div>
+                     </div>
+                )}
+
                 {activeTool === 'background' && (
                     <div className="space-y-4 animate-fade-in-up">
                         <div className="flex gap-2">
