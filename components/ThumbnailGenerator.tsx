@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount, expandPrompt } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect, AspectRatio } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect, AspectRatio, RenderEngine, Composition } from '../types';
 import { ImageEditor } from './ImageEditor';
 import { playSound } from '../App';
 
@@ -11,18 +11,18 @@ interface ThumbnailGeneratorProps {
 }
 
 const NEGATIVE_PRESETS = [
+    { label: "Anti-Realism (Strict)", value: "photorealistic, real life, human skin, veins, realistic eyes, vlog, youtube face, camera, human hands, flesh" },
     { label: "Standard Clean", value: "low quality, blurry, watermark, text, bad anatomy, deformed, plastic, toy, dark, muted, boring" },
-    { label: "3D Purist", value: "2d, drawing, sketch, painting, cartoon, anime, illustration, flat, cel shaded" },
-    { label: "Portrait Fix", value: "distorted face, bad eyes, missing fingers, extra limbs, mutated, ugly, cross-eyed" },
-    { label: "No Text", value: "text, username, ui, watermark, logo, signature, copyright, label" },
+    { label: "2D Reject", value: "drawing, sketch, painting, cartoon, anime, illustration, flat, cel shaded" },
 ];
 
 const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
-    { label: "Impossible Parkour", category: "Obby", style: "obby", prompt: "POV of a Roblox avatar jumping over a massive gap in a colorful impossible parkour course above clouds, neon platforms, motion blur, 8k render, speed lines, wide angle lens" },
-    { label: "Secret Pet Found", category: "Simulator", style: "simulator", prompt: "Excited Roblox avatar with SHOCKED face holding a glowing legendary rainbow pet egg that is cracking open, sparkles, light rays, vibrant colors, close up shot" },
-    { label: "Tycoon Millionaire", category: "Simulator", style: "high-ctr", prompt: "Roblox avatar wearing a golden suit standing next to a pile of cash and a luxury supercar, modern mansion background, massive lens flare, high saturation, rich atmosphere" },
-    { label: "Monster Chase", category: "Horror", style: "horror", prompt: "Terrified Roblox avatar looking back at a giant shadowy monster with glowing red eyes in a dark corridor, flashlight beam, cinematic horror lighting, depth of field, motion blur" },
-    { label: "Epic Sword Fight", category: "Anime", style: "anime", prompt: "Two Roblox avatars clashing swords in mid-air, magical energy auras, floating rocks, dynamic action camera angle, intense anime effects, lightning background" },
+    { label: "FPS Loadout", category: "Shooter", style: "shooter", prompt: "Roblox avatar holding a gold camo SCAR-H rifle, tactical vest, muzzle flash, dust and debris, warehouse background, crosshair overlay, 4k render" },
+    { label: "Millionaire Tycoon", category: "Tycoon", style: "tycoon", prompt: "Isometric view of a massive futuristic mansion base, conveyors dropping cash, Roblox avatar in a suit standing on a pile of money, golden hour lighting" },
+    { label: "Cozy Sushi Bar", category: "Restaurant", style: "restaurant", prompt: "Cute Roblox avatar holding a tray of sushi rolls in a warm wooden restaurant, lanterns hanging, bokeh lights, soft shadows, steam rising from food" },
+    { label: "Impossible Obby", category: "Obby", style: "obby", prompt: "POV of a Roblox avatar jumping over a massive gap in a colorful impossible parkour course above clouds, neon platforms, motion blur, speed lines" },
+    { label: "Pet Simulator", category: "Simulator", style: "simulator", prompt: "Roblox avatar with SHOCKED face surrounded by floating legendary cube pets, rainbow aura, opening a glowing egg, vibrant colors" },
+    { label: "Horror Chase", category: "Horror", style: "horror", prompt: "Terrified Roblox avatar running down a dark school hallway, flashlight beam, shadowy monster with red eyes behind, motion blur, grain" },
 ];
 
 const POSES = [
@@ -65,11 +65,6 @@ const PARTICLES: {id: ParticleEffect, label: string}[] = [
     { id: 'pet-trail', label: '🐾 Pet Trail' },
 ];
 
-// IDEA DICE COMPONENTS
-const DICE_SUBJECTS = ["Noob", "Pro Gamer", "Zombie", "Hacker", "Princess", "Ninja", "Police Officer"];
-const DICE_ACTIONS = ["running from", "fighting", "discovering", "eating", "driving", "falling off"];
-const DICE_SETTINGS = ["a burning city", "a rainbow parkour", "a secret cave", "the moon", "a luxury mansion", "a haunted school"];
-
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, remixConfig }) => {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS[0].value);
@@ -77,11 +72,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const [secondReferenceImage, setSecondReferenceImage] = useState<string | null>(null);
   const [customImageUrl, setCustomImageUrl] = useState('');
-  
   const [robloxUsername, setRobloxUsername] = useState('');
-  const [avatarData, setAvatarData] = useState<RobloxAvatar | null>(null);
   
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [batchSize, setBatchSize] = useState<number>(1);
@@ -89,12 +81,16 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [showHistory, setShowHistory] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'prompt' | 'avatar'>('prompt');
+  
+  // Configuration State
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("auto");
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
   const [avatarModel, setAvatarModel] = useState<AvatarModel>('R15'); 
+  const [renderEngine, setRenderEngine] = useState<RenderEngine>('cycles');
+  const [composition, setComposition] = useState<Composition>('auto');
+
   const [pose, setPose] = useState<string>('auto');
-  
   const [expression, setExpression] = useState<FaceExpression>('auto');
   const [lighting, setLighting] = useState<LightingPreset>('auto');
   const [particles, setParticles] = useState<ParticleEffect>('auto');
@@ -115,6 +111,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           setStyle(remixConfig.style);
           setModel(remixConfig.model);
           setAvatarModel(remixConfig.avatarModel);
+          setRenderEngine(remixConfig.renderEngine);
+          setComposition(remixConfig.composition);
           setPose(remixConfig.pose || 'auto');
           setExpression(remixConfig.expression || 'auto');
           setLighting(remixConfig.lighting || 'auto');
@@ -143,14 +141,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       } catch (e) {}
   };
 
-  const handleIdeaDice = () => {
-      playSound('blip');
-      const subj = DICE_SUBJECTS[Math.floor(Math.random() * DICE_SUBJECTS.length)];
-      const act = DICE_ACTIONS[Math.floor(Math.random() * DICE_ACTIONS.length)];
-      const set = DICE_SETTINGS[Math.floor(Math.random() * DICE_SETTINGS.length)];
-      setPrompt(`Roblox ${subj} ${act} ${set}, 4k render`);
-  };
-
   const handleApplyTemplate = (t: PromptTemplate) => {
       setPrompt(t.prompt);
       setStyle(t.style);
@@ -165,31 +155,10 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       const reader = new FileReader();
       reader.onloadend = () => {
         setReferenceImage(reader.result as string);
-        setAvatarData(null);
         setCustomImageUrl('');
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleImageUrlChange = async () => {
-      if (!customImageUrl) return;
-      // Basic client-side check, robust fetch happens in generation or we just pass URL if model supported it (but currently we need base64 usually)
-      // For now, we just assume the user will input a valid URL that the browser can fetch or we pass it directly?
-      // Actually, standard `generateContent` might not accept external URLs directly in parts without fetching.
-      // We will try to fetch it to convert to base64 for consistency.
-      try {
-          const res = await fetch(customImageUrl);
-          const blob = await res.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-              setReferenceImage(reader.result as string);
-              setAvatarData(null);
-          };
-          reader.readAsDataURL(blob);
-      } catch (e) {
-          setError("Failed to load image from URL. Check CORS or use Upload.");
-      }
   };
   
   const fetchAvatar = async () => {
@@ -199,7 +168,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       setError(null);
       try {
           const avatar = await getRobloxAvatar(robloxUsername, avatarModel);
-          setAvatarData(avatar);
           setReferenceImage(avatar.base64);
       } catch (err: any) {
           setError(`Roblox Error: ${err.message}`);
@@ -247,6 +215,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 negativePrompt, 
                 referenceImage: referenceImage || undefined,
                 aspectRatio, style, model, avatarModel, pose, expression, lighting, particles,
+                renderEngine, composition,
                 seed: currentSeed 
             };
             return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
@@ -284,7 +253,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             onFocus={() => setShowHistory(true)}
-                            placeholder="Describe your scene..."
+                            placeholder="Describe your Roblox game idea (e.g., 'A cyberpunk city tycoon with flying cars')..."
                             className="w-full h-40 bg-[#050508] rounded-xl p-6 text-lg text-white placeholder-slate-700 outline-none resize-none font-light tracking-wide z-10 relative"
                         />
                         
@@ -305,7 +274,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
 
                         <div className="flex justify-between items-center px-6 py-4 bg-[#050508] border-t border-white/5 rounded-b-xl gap-2 overflow-x-auto">
                             <button onClick={() => setShowLibrary(true)} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-white transition-colors whitespace-nowrap">
-                                📚 Templates
+                                📚 Game Templates
                             </button>
                             <div className="flex gap-2 ml-auto">
                                 <button onClick={handleExpandPrompt} disabled={isExpanding || !prompt} className="px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-[10px] text-purple-400 uppercase font-bold tracking-wider hover:bg-purple-500/20 transition-all disabled:opacity-50">
@@ -334,32 +303,46 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                          </select>
                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
                     </div>
-                    <input 
-                        type="text" 
-                        value={negativePrompt} 
-                        onChange={(e) => setNegativePrompt(e.target.value)} 
-                        className="w-full mt-2 bg-transparent text-[10px] text-slate-600 border-b border-white/5 focus:border-white/20 outline-none py-1"
-                    />
                 </div>
 
-                {/* Controls */}
+                {/* GAME GENRE & ENGINE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                     <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Visual Style</label>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Game Genre</label>
                         <div className="flex flex-wrap gap-2">
-                            {['cinematic', 'simulator', 'horror', 'anime', 'high-ctr', 'rpg'].map((s) => (
+                            {['cinematic', 'simulator', 'tycoon', 'shooter', 'restaurant', 'obby', 'horror', 'rpg', 'anime', 'high-ctr'].map((s) => (
                                 <button key={s} onClick={() => setStyle(s as any)} className={`px-4 py-2.5 rounded-lg text-[10px] uppercase font-bold tracking-wider border transition-all ${style === s ? 'bg-white text-black border-white' : 'bg-transparent border-white/10 text-slate-500 hover:border-white/30'}`}>{s}</button>
                             ))}
                         </div>
                     </div>
-                    <div>
-                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Aspect Ratio</label>
-                         <div className="flex gap-3 bg-black/30 p-1.5 rounded-xl border border-white/5">
-                            {[{v:"auto", l:"🧠 AI Auto"}, {v:"16:9", l:"16:9"}, {v:"1:1", l:"1:1"}, {v:"9:16", l:"9:16"}].map(r => (
-                                <button key={r.v} onClick={() => setAspectRatio(r.v as any)} className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${aspectRatio === r.v ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}>{r.l}</button>
-                            ))}
+                    <div className="space-y-6">
+                         <div>
+                            <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Render Engine</label>
+                            <div className="flex gap-2 bg-black/30 p-1 rounded-xl border border-white/5">
+                                {[{id:'cycles', l:'Blender Cycles'}, {id:'studio', l:'Roblox Studio'}, {id:'c4d', l:'Cinema 4D'}].map(e => (
+                                    <button key={e.id} onClick={() => setRenderEngine(e.id as any)} className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${renderEngine === e.id ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}>{e.l}</button>
+                                ))}
+                            </div>
+                         </div>
+                         <div>
+                             <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Composition (Camera)</label>
+                             <div className="flex gap-2 bg-black/30 p-1 rounded-xl border border-white/5 overflow-x-auto">
+                                {[{id:'auto', l:'Auto'}, {id:'wide-action', l:'Wide Action'}, {id:'closeup', l:'Face Icon'}, {id:'isometric', l:'Isometric'}, {id:'vs-mode', l:'Vs Mode'}].map(c => (
+                                    <button key={c.id} onClick={() => setComposition(c.id as any)} className={`flex-1 py-2 px-3 whitespace-nowrap rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${composition === c.id ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}>{c.l}</button>
+                                ))}
+                             </div>
                          </div>
                     </div>
+                </div>
+
+                {/* Aspect Ratio */}
+                <div className="mb-8">
+                     <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Format</label>
+                     <div className="flex gap-3 bg-black/30 p-1.5 rounded-xl border border-white/5">
+                        {[{v:"auto", l:"🧠 AI Auto"}, {v:"16:9", l:"Thumbnail (16:9)"}, {v:"1:1", l:"Icon (1:1)"}, {v:"9:16", l:"Vertical (9:16)"}].map(r => (
+                            <button key={r.v} onClick={() => setAspectRatio(r.v as any)} className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${aspectRatio === r.v ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}>{r.l}</button>
+                        ))}
+                     </div>
                 </div>
 
                 {/* Face & Lighting Controls */}
@@ -409,9 +392,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                  {/* Batch & Model */}
                  <div className="flex items-center justify-between border-t border-white/5 pt-6">
                      <div className="flex items-center gap-4">
-                        <button onClick={handleRandomize} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white">🎲 Random</button>
-                        <div className="h-4 w-px bg-white/10"></div>
-                        <button onClick={handleIdeaDice} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-neon-blue transition-colors">🎲 Idea Dice</button>
+                        <button onClick={handleRandomize} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white">🎲 Random Idea</button>
                         <div className="h-4 w-px bg-white/10"></div>
                         <div className="flex items-center gap-2">
                              <span className="text-[10px] font-bold uppercase text-slate-500">Batch:</span>
@@ -431,14 +412,14 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
             <div className="xl:col-span-4 flex flex-col gap-6">
                 <div className="bg-[#08080c]/80 backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 shadow-xl flex-1">
                     <div className="flex bg-black/40 rounded-xl p-1.5 mb-6 border border-white/5">
-                        <button onClick={() => { setActiveTab('prompt'); setReferenceImage(null); }} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'prompt' ? 'bg-white text-black' : 'text-slate-500'}`}>Auto-Gen</button>
-                        <button onClick={() => setActiveTab('avatar')} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'avatar' ? 'bg-white text-black' : 'text-slate-500'}`}>Reference</button>
+                        <button onClick={() => { setActiveTab('prompt'); setReferenceImage(null); }} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'prompt' ? 'bg-white text-black' : 'text-slate-500'}`}>Auto-Gen Avatar</button>
+                        <button onClick={() => setActiveTab('avatar')} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'avatar' ? 'bg-white text-black' : 'text-slate-500'}`}>Use Reference</button>
                     </div>
 
                     {activeTab === 'avatar' && (
                         <div className="animate-fade-in-up space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[9px] font-bold uppercase text-slate-500">Roblox User</label>
+                                <label className="text-[9px] font-bold uppercase text-slate-500">Roblox User (Exact Look)</label>
                                 <div className="flex gap-2">
                                     <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none" onKeyDown={(e) => e.key === 'Enter' && fetchAvatar()} />
                                     <button onClick={fetchAvatar} disabled={isFetchingAvatar1} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">{isFetchingAvatar1 ? '...' : 'GET'}</button>
@@ -449,14 +430,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                                 <label className="text-[9px] font-bold uppercase text-slate-500">Direct Upload</label>
                                 <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">📁 Upload PNG</button>
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                            </div>
-
-                            <div className="space-y-2 pt-2 border-t border-white/5">
-                                <label className="text-[9px] font-bold uppercase text-slate-500">Image URL</label>
-                                <div className="flex gap-2">
-                                    <input type="text" value={customImageUrl} onChange={(e) => setCustomImageUrl(e.target.value)} placeholder="https://..." className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none" />
-                                    <button onClick={handleImageUrlChange} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">Load</button>
-                                </div>
                             </div>
 
                             {referenceImage && (
@@ -471,7 +444,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     {activeTab === 'prompt' && (
                         <div className="flex flex-col items-center justify-center h-64 text-center">
                             <div className="text-4xl mb-4 animate-bounce">🎨</div>
-                            <p className="text-xs text-slate-400">AI will design the character based on your prompt.</p>
+                            <p className="text-xs text-slate-400">AI will generate a random Roblox avatar based on your description.</p>
                         </div>
                     )}
                 </div>
@@ -483,10 +456,10 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 >
                     <span className="relative z-10">
                         {isGenerating ? (
-                            progress < 10 ? 'Analyzing Prompt...' : 
-                            progress < 30 ? 'Inferring Config...' :
+                            progress < 10 ? 'Analyzing...' : 
+                            progress < 30 ? 'Inferring Engine...' :
                             `Rendering ${Math.round(progress)}%`
-                        ) : 'INITIALIZE'}
+                        ) : 'RENDER GFX'}
                     </span>
                     {isGenerating && <div className="absolute bottom-0 left-0 h-1.5 bg-neon-blue transition-all duration-300" style={{ width: `${progress}%` }}></div>}
                 </button>
@@ -499,7 +472,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
             <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-fade-in-up">
                 <div className="w-full max-w-5xl bg-[#0a0a10] border border-white/10 rounded-[2rem] p-10 max-h-[85vh] overflow-y-auto">
                     <div className="flex justify-between mb-8">
-                        <h2 className="text-3xl font-black text-white uppercase">Viral Templates</h2>
+                        <h2 className="text-3xl font-black text-white uppercase">Game Genres</h2>
                         <button onClick={() => setShowLibrary(false)} className="text-white hover:text-red-500">✕</button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

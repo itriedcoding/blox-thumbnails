@@ -1,10 +1,13 @@
 
-export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rpg' | 'anime' | 'high-ctr';
+export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rpg' | 'anime' | 'restaurant' | 'high-ctr' | 'shooter' | 'tycoon';
 export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R6' | 'R15' | 'Rthro';
 export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy' | 'updates';
 
-// Added 'auto' to all configurable types
+// New Advanced Controls
+export type RenderEngine = 'cycles' | 'eevee' | 'c4d' | 'studio';
+export type Composition = 'auto' | 'closeup' | 'waist-shot' | 'wide-action' | 'isometric' | 'vs-mode';
+
 export type FaceExpression = 'auto' | 'default' | 'shocked' | 'happy' | 'angry' | 'evil' | 'crying' | 'sigma' | 'silly';
 export type LightingPreset = 'auto' | 'default' | 'neon-studio' | 'sun-drenched' | 'dark-void' | 'god-rays' | 'cyber-punk' | 'soft-box';
 export type ParticleEffect = 'auto' | 'none' | 'sparkles' | 'fire' | 'money' | 'glitch' | 'lightning' | 'pet-trail' | 'hearts';
@@ -25,6 +28,8 @@ export interface GeneratedImage {
   style: ThumbnailStyle;
   model: ModelType;
   avatarModel: AvatarModel;
+  renderEngine?: RenderEngine;
+  composition?: Composition;
   pose?: string;
   expression?: FaceExpression;
   lighting?: LightingPreset;
@@ -46,6 +51,8 @@ export interface ThumbnailConfig {
   style: ThumbnailStyle;
   model: ModelType;
   avatarModel: AvatarModel;
+  renderEngine: RenderEngine;
+  composition: Composition;
   pose?: string;
   expression?: FaceExpression;
   lighting?: LightingPreset;

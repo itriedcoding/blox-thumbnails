@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset, ParticleEffect, AspectRatio } from "../types";
+import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset, ParticleEffect, AspectRatio, RenderEngine, Composition } from "../types";
 
 // ==========================================
 // 🚀 GEMINI SERVICE (STANDARD)
@@ -34,63 +34,81 @@ export const getActiveNodeCount = (): number => {
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
   const styles: Record<ThumbnailStyle, string> = {
-    cinematic: "PHOTOREALISTIC CINEMATIC. 8K. Depth of Field. Bokeh. Color Graded. Movie Poster Quality. Dramatic Shadows. Anamorphic Lens Flares. Dust particles.",
-    simulator: "ROBLOX SIMULATOR ICON STYLE. Ultra-Vibrant Colors. Glossy Plastic Textures. Soft Smooth Lighting. Happy Atmosphere. 3D Render style like Pet Simulator X. Clean gradients.",
-    obby: "OBBY THUMBNAIL STYLE. High Contrast. Bright Neon Colors (Green, Pink, Blue). Motion lines. Wide Angle. Clear path visibility. Exciting and Fast-paced.",
-    horror: "PHOTOREALISTIC HORROR. Grimy textures. Rust. Blood/Dirt decals. Volumetric fog. Low key lighting. Unsettling realism. Film Grain. High contrast shadows.",
-    rpg: "FANTASY RPG GAME ART. Magic effects with particle lighting. Metallic armor reflections with scratches. Detailed environment textures. Epic scale. God Rays. Bloom.",
-    anime: "HIGH FIDELITY ANIME 3D. Stylized realism. Detailed particle effects. Glowing auras. Vibrant colors but realistic shading and material response. Cel-shaded rim lights.",
-    "high-ctr": "ROBLOX DISCOVERY ALGORITHM OPTIMIZED. BLENDER 4.0 CYCLES RENDER. HIGH GLOSS PLASTIC MATERIALS. TOY SHADER. EXTREME BLOOM. THICK WHITE OUTLINE AROUND CHARACTER. VIBRANT GRADIENT BACKGROUND. 3D TEXTURE MAPPING. NO ARROWS. NO TEXT. PURE VISUAL APPEAL."
+    cinematic: "STYLE: CINEMATIC ROBLOX RENDER. 8K Resolution. Detailed Textures. Volumetric Lighting. Action Movie Atmosphere. NO REALISM, KEEP ROBLOX AESTHETIC.",
+    simulator: "STYLE: ROBLOX SIMULATOR GAME ICON. Ultra-Vibrant, High Saturation. Glossy 'Toy' Plastic Textures. Bright Smooth Lighting. Soft Shadows. Clean and Colorful.",
+    obby: "STYLE: ROBLOX OBBY THUMBNAIL. Neon Colors (Green, Pink, Blue). High Contrast. clear path visibility. Dynamic Motion Lines. Fun and Exciting.",
+    horror: "STYLE: ROBLOX HORROR GAME. Dark, Grimy, Rusty Textures. Spotlight Lighting. Fog/Mist. Scary Atmosphere but still Roblox Avatars. High Contrast Shadows.",
+    rpg: "STYLE: ROBLOX RPG/FANTASY. Magical Effects. Glowing Runes. Metallic Armor Textures. Epic Scale Backgrounds. God Rays. Particle Heavy.",
+    anime: "STYLE: ROBLOX ANIME BATTLEGROUNDS. Cel-Shaded Rim Lights. Manga Speed Lines. Energy Auras. Intense Action. Stylized VFX.",
+    restaurant: "STYLE: ROBLOX RESTAURANT/CAFE ROLEPLAY. Cozy Warm Lighting (Golden Hour). High-Poly Food Assets (Burgers, Sushi, Boba). Wooden/Modern Interior. Soft Bokeh Background. Inviting Atmosphere.",
+    "high-ctr": "STYLE: VIRAL ROBLOX DISCOVERY. Extreme Gloss. Brightest Colors possible. Thick White Outlines (Rim Light). Gradient Backgrounds. Optimized for Click-Through Rate.",
+    shooter: "STYLE: ROBLOX FPS/SHOOTER. Tactical Military Gear. Muzzle Flashes. Tracer Rounds. Gritty Urban or Sci-Fi Environment. First-Person or Over-Shoulder View. Motion Blur.",
+    tycoon: "STYLE: ROBLOX TYCOON. Isometric or Wide View of Massive Base/Mansion. Stacks of Cash/Money. Droppers and Conveyors. Progression and Wealth theme."
   };
   return styles[style] || styles.cinematic;
 };
 
+const getRenderEnginePrompt = (engine: RenderEngine): string => {
+    switch (engine) {
+        case 'cycles': return "RENDER ENGINE: BLENDER CYCLES. Path Tracing. Realistic Global Illumination. High Fidelity Materials.";
+        case 'eevee': return "RENDER ENGINE: BLENDER EEVEE. Real-time Rendering Look. Sharp Shadows. Bloom. Faster/Game-like feel.";
+        case 'c4d': return "RENDER ENGINE: CINEMA 4D. MoGraph Style. Smooth Animations. Abstract 3D Shapes. Very Clean and Polished.";
+        case 'studio': return "RENDER ENGINE: ROBLOX STUDIO NATIVE. Authentic In-Game Look. Voxel Terrain. Default Roblox Lighting. Nostalgic/Classic feel.";
+        default: return "";
+    }
+};
+
+const getCompositionPrompt = (comp: Composition): string => {
+    switch (comp) {
+        case 'closeup': return "CAMERA: EXTREME CLOSE-UP on Face/Head. Focus on expression and accessories. Background Blurred (Bokeh). Perfect for Game Icons (1:1).";
+        case 'waist-shot': return "CAMERA: MEDIUM SHOT (Waist Up). Showcasing outfit and held items. Standard Portrait composition.";
+        case 'wide-action': return "CAMERA: WIDE ANGLE ACTION SHOT. Dynamic FOV (Field of View). Capturing the environment and full character movement. Good for Thumbnails (16:9).";
+        case 'isometric': return "CAMERA: ISOMETRIC VIEW (High Angle). looking down at the map/base. Strategic view. Good for Tycoons/Strategy.";
+        case 'vs-mode': return "CAMERA: SPLIT COMPOSITION or FACE-OFF. Two characters facing each other or screen divided. Conflict/Battle theme.";
+        default: return "";
+    }
+};
+
 const getExpressionPrompt = (exp?: FaceExpression): string => {
     switch (exp) {
-        case 'shocked': return "FACE EXPRESSION: EXTREME SHOCK, MOUTH OPEN WIDE, EYES POPPING OUT, HANDS ON CHEEKS.";
-        case 'happy': return "FACE EXPRESSION: OVERJOYED, BIGGEST SMILE, LAUGHING, TEARS OF JOY.";
-        case 'angry': return "FACE EXPRESSION: FURIOUS, GLOWING RED EYES, GRITTING TEETH, STEAM COMING FROM EARS.";
-        case 'evil': return "FACE EXPRESSION: SINISTER GRIN, SHADOWED FACE, VILLAINOUS LAUGH, GLOWING PURPLE EYES.";
-        case 'crying': return "FACE EXPRESSION: SOBBING, TEARS STREAMING DOWN FACE, SAD PUPPY EYES.";
-        case 'sigma': return "FACE EXPRESSION: STOIC CHAD FACE, CONFIDENT SMIRK, RAISED EYEBROW, MEWING.";
-        case 'silly': return "FACE EXPRESSION: TONGUE OUT, CROSSED EYES, GOOFY, DERPY.";
+        case 'shocked': return "EXPRESSION: ROBLOX SHOCKED FACE (Mouth Open, Eyes Wide).";
+        case 'happy': return "EXPRESSION: ROBLOX WINNING SMILE (Happy, Cheerful).";
+        case 'angry': return "EXPRESSION: ROBLOX ANGRY FACE (Furrowed Brows, Intense).";
+        case 'evil': return "EXPRESSION: ROBLOX VILLAIN FACE (Sinister Grin, Shadowed Eyes).";
+        case 'crying': return "EXPRESSION: ROBLOX SAD FACE (Crying, Tears).";
+        case 'sigma': return "EXPRESSION: ROBLOX 'MAN FACE' (Chiseled, Confident, Meme).";
+        case 'silly': return "EXPRESSION: ROBLOX SILLY FACE (Tongue Out, Goofy).";
         default: return "";
     }
 };
 
 const getLightingPrompt = (light?: LightingPreset): string => {
     switch (light) {
-        case 'neon-studio': return "LIGHTING: CYBERPUNK NEON STUDIO. Pink and Blue Rim Lights. Dark Background. High Contrast.";
-        case 'sun-drenched': return "LIGHTING: GOLDEN HOUR. Warm sunlight flooding the scene. Lens flares. Bright and Airy.";
-        case 'dark-void': return "LIGHTING: PITCH BLACK VOID. Only the character is lit by a single spotlight from above. Dramatic.";
-        case 'god-rays': return "LIGHTING: HEAVENLY. Massive volumetric light beams coming from the sky. Holy atmosphere.";
-        case 'cyber-punk': return "LIGHTING: NIGHT CITY. Street lamps, neon signs reflecting on wet ground. Green and Purple hues.";
-        case 'soft-box': return "LIGHTING: PROFESSIONAL STUDIO SOFTBOX. Even lighting, no harsh shadows, perfect for character showcase.";
+        case 'neon-studio': return "LIGHTING: NEON STUDIO. Pink/Blue Rim Lights. Dark Background.";
+        case 'sun-drenched': return "LIGHTING: BRIGHT DAYLIGHT. Sun + Sky. Vibrant and Happy.";
+        case 'dark-void': return "LIGHTING: DARK VOID. Spotlight only. Dramatic.";
+        case 'god-rays': return "LIGHTING: DIVINE. Volumetric God Rays from above.";
+        case 'cyber-punk': return "LIGHTING: CYBERPUNK CITY. Night time, Neon Signs, Wet Reflections.";
+        case 'soft-box': return "LIGHTING: SOFTBOX STUDIO. Even, professional lighting.";
         default: return "";
     }
 };
 
 const getParticlePrompt = (particles?: ParticleEffect): string => {
     switch (particles) {
-        case 'sparkles': return "FX: Floating glowing magical sparkles and stars surrounding the character.";
-        case 'fire': return "FX: Raging fire aura, embers flying, heat distortion around the character.";
-        case 'money': return "FX: Falling Robux stacks, gold coins raining down, wealth aura.";
-        case 'glitch': return "FX: Digital glitch artifacts, chromatic aberration, data stream particles.";
-        case 'lightning': return "FX: Crackling blue electricity arcs, lightning bolts striking background.";
-        case 'pet-trail': return "FX: Glowing speed trail, cute floating mini-pets following the character.";
-        case 'hearts': return "FX: Floating pink and red hearts, love aura, soft glow.";
+        case 'sparkles': return "FX: Glowing Sparkles/Stars.";
+        case 'fire': return "FX: Fire/Flames Aura.";
+        case 'money': return "FX: Flying Robux/Coins.";
+        case 'glitch': return "FX: Digital Glitch Artifacts.";
+        case 'lightning': return "FX: Blue Lightning Arcs.";
+        case 'pet-trail': return "FX: Floating Mini-Pets Trail.";
+        case 'hearts': return "FX: Floating Love Hearts.";
         default: return "";
     }
 };
 
-// Replaced generic tokens with Roblox Visual Elements
 const ROBLOX_VISUAL_ELEMENTS = [
-    "Floating Legendary Pet Egg cracking open",
-    "Stack of Golden Bars in background",
-    "Glowing Blue Speed Trail",
-    "Magical Rune Circle on ground",
-    "Neon Floating Platforms",
-    "Shiny Diamond Sword on back"
+    "Floating Pet Egg", "Golden Bars", "Speed Trail", "Magic Rune", "Neon Platform", "Diamond Sword"
 ];
 
 // ==========================================
@@ -101,16 +119,17 @@ export const inferThumbnailConfig = async (prompt: string): Promise<Partial<Thum
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Analyze this Roblox thumbnail prompt: "${prompt}".
-            Determine the best settings to maximize Click-Through Rate (CTR).
+            contents: `Analyze this Roblox Game concept: "${prompt}".
+            Determine the best settings for a Roblox Game Thumbnail.
             
-            Return JSON matching this schema:
+            Return JSON:
             {
-                "expression": "shocked" | "happy" | "angry" | "evil" | "crying" | "sigma" | "silly" | "default",
-                "lighting": "neon-studio" | "sun-drenched" | "dark-void" | "god-rays" | "cyber-punk" | "soft-box" | "default",
-                "particles": "sparkles" | "fire" | "money" | "glitch" | "lightning" | "pet-trail" | "hearts" | "none",
-                "pose": "standing" | "fighting_stance" | "running" | "jumping" | "scared" | "driving",
-                "aspectRatio": "16:9" | "1:1" | "9:16"
+                "expression": "shocked" | "happy" | "angry" | "evil" | "default",
+                "lighting": "neon-studio" | "sun-drenched" | "dark-void" | "default",
+                "particles": "sparkles" | "fire" | "money" | "none",
+                "pose": "standing" | "fighting_stance" | "running" | "jumping",
+                "aspectRatio": "16:9" | "1:1",
+                "composition": "closeup" | "wide-action" | "isometric" | "waist-shot"
             }
             `,
             config: {
@@ -121,33 +140,32 @@ export const inferThumbnailConfig = async (prompt: string): Promise<Partial<Thum
         const jsonText = response.text || "{}";
         return JSON.parse(jsonText);
     } catch (e) {
-        console.warn("Config Inference Failed, using defaults", e);
         return {
             expression: 'default',
             lighting: 'default',
             particles: 'none',
             pose: 'standing',
-            aspectRatio: '16:9'
+            aspectRatio: '16:9',
+            composition: 'wide-action'
         };
     }
 };
 
 // ==========================================
-// UTILITIES
+// UTILITIES (Unchanged mostly, just types)
 // ==========================================
 
 export const generateRandomPrompt = async (): Promise<string> => {
   try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate a VIRAL, HIGH-CTR, HYPER-REALISTIC Roblox thumbnail prompt.
-        It must be catchy, exciting, and describe a scene with realistic lighting and materials.
-        Output ONLY the prompt text.`,
+        contents: `Generate a VIRAL ROBLOX GAME IDEA prompt. 
+        Examples: "Tycoon where you build a moon base", "FPS in a candy land", "Horror game in a school".
+        Output ONLY the prompt.`,
       });
-      return response.text?.trim() || "Roblox noob eating a taco in space";
+      return response.text?.trim() || "Roblox obby in the clouds";
   } catch (e) {
-      console.warn("Random prompt failed, using fallback");
-      return "Cyberpunk samurai roblox avatar standing in neon rain, cinematic lighting, 8k";
+      return "Cyberpunk ninja simulator roblox";
   }
 };
 
@@ -155,11 +173,10 @@ export const expandPrompt = async (shortPrompt: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Role: Professional Roblox GFX Artist.
-            Task: Expand this short idea into a highly detailed 3D rendering prompt.
+            contents: `Role: Roblox GFX Artist.
+            Task: Expand this idea into a detailed Blender Render prompt.
             Input: "${shortPrompt}"
-            Requirements: Describe lighting, camera angle, textures, action, and atmosphere. Keep it under 50 words.
-            Output: ONLY the expanded prompt.`
+            Output: ONLY the prompt.`
         });
         return response.text?.trim() || shortPrompt;
     } catch (e) {
@@ -171,7 +188,7 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Optimize this prompt for High-CTR Roblox GFX: "${originalPrompt}". Add viral keywords like "Rim Light", "4K". Output ONLY the enhanced prompt.`,
+      contents: `Make this prompt more "Roblox High-CTR": "${originalPrompt}". Add keywords like "4k", "Blender", "Glossy". Output ONLY the prompt.`,
     });
     return response.text?.trim() || originalPrompt;
   } catch (e) {
@@ -185,12 +202,7 @@ export const analyzeImage = async (base64Image: string): Promise<string> => {
 
     const parts = [
         { inlineData: { mimeType: matches[1], data: matches[2] } },
-        { text: `[TASK: ANALYZE ROBLOX THUMBNAIL]
-        Act as a professional YouTube algorithm expert.
-        1. Rate the Click-Through Rate (CTR) potential (1-10).
-        2. Describe the main subject.
-        3. Suggest ONE specific improvement for lighting or composition.
-        Keep it concise (under 50 words).` }
+        { text: `Analyze this Roblox GFX. Is it high CTR? What game genre is it?` }
     ];
 
     try {
@@ -210,11 +222,7 @@ export const refineImage = async (base64Image: string, prompt: string): Promise<
 
     const parts = [
         { inlineData: { mimeType: matches[1], data: matches[2] } },
-        { text: `[TASK: UPSCALE & REMASTER] 
-        Input is a Roblox GFX render. 
-        ACTION: Enhance details, fix aliasing, improve lighting, and increase perceived resolution.
-        CONSTRAINT: Keep the exact same composition and characters. Do not change the scene content.
-        Context: ${prompt}` }
+        { text: `Upscale this Roblox GFX. Keep details sharp. Reduce noise. Context: ${prompt}` }
     ];
 
     try {
@@ -236,7 +244,7 @@ export const generateSegmentationMask = async (base64Image: string): Promise<str
 
     const parts = [
         { inlineData: { mimeType: matches[1], data: matches[2] } },
-        { text: `Generate a high-contrast BLACK AND WHITE mask for the MAIN SUBJECT (Roblox Avatar). White subject, Black background.` }
+        { text: `Generate a black and white mask for the Roblox Character.` }
     ];
 
     try {
@@ -256,10 +264,7 @@ export const generateBackgroundImage = async (prompt: string): Promise<string> =
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: `Generate a seamless high-quality background texture/scene. 
-            Description: ${prompt}. 
-            Style: 3D Render, Roblox Style, High Detail. 
-            No characters. Just environment/background.`,
+            contents: `Roblox game background. ${prompt}. No characters.`,
             config: { imageConfig: { aspectRatio: "16:9" } }
         });
         return extractImage(response);
@@ -282,12 +287,14 @@ const extractImage = (response: any): string => {
 export const generateThumbnail = async (config: ThumbnailConfig): Promise<string> => {
   const modelName = config.model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';    
   const isHighCtr = config.style === 'high-ctr' || config.style === 'simulator' || config.style === 'obby';
+  const isRestaurant = config.style === 'restaurant';
+  const isShooter = config.style === 'shooter';
 
   // NEURAL AUTO-CONFIGURATION
-  // If any setting is 'auto', we infer it first.
   let effectiveConfig = { ...config };
   
-  if (config.expression === 'auto' || config.lighting === 'auto' || config.particles === 'auto' || config.pose === 'auto' || config.aspectRatio === 'auto') {
+  // Auto-detect settings if 'auto' is selected
+  if (config.expression === 'auto' || config.lighting === 'auto' || config.particles === 'auto' || config.pose === 'auto' || config.aspectRatio === 'auto' || config.composition === 'auto') {
       const inferred = await inferThumbnailConfig(config.prompt);
       
       if (config.expression === 'auto') effectiveConfig.expression = inferred.expression as FaceExpression;
@@ -295,12 +302,18 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       if (config.particles === 'auto') effectiveConfig.particles = inferred.particles as ParticleEffect;
       if (config.pose === 'auto') effectiveConfig.pose = inferred.pose;
       if (config.aspectRatio === 'auto') effectiveConfig.aspectRatio = (inferred.aspectRatio || "16:9") as AspectRatio;
+      if (config.composition === 'auto') effectiveConfig.composition = (inferred.composition || "wide-action") as Composition;
   }
 
-  // Ensure Fallbacks if inference missed something
+  // Fallbacks
   if (effectiveConfig.aspectRatio === 'auto') effectiveConfig.aspectRatio = '16:9';
+  if (effectiveConfig.composition === 'auto') effectiveConfig.composition = 'wide-action';
 
-  let avatarSpecs = config.avatarModel === 'R6' ? 'Classic R6 Blocky' : config.avatarModel === 'R15' ? 'Modern R15 Segmented' : 'Realistic Rthro';
+  // Specific Overrides for Game Types
+  if (isRestaurant && config.lighting === 'auto') effectiveConfig.lighting = 'sun-drenched';
+  if (isShooter && config.pose === 'auto') effectiveConfig.pose = 'fighting_stance';
+
+  let avatarSpecs = config.avatarModel === 'R6' ? 'Classic R6 Blocky Roblox Avatar' : config.avatarModel === 'R15' ? 'Modern R15 Segmented Roblox Avatar' : 'Realistic Rthro Roblox Avatar';
   
   // ROBLOX ALGORITHM INJECTION LOGIC
   let viralInjection = "";
@@ -308,19 +321,31 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
       const randomElement = ROBLOX_VISUAL_ELEMENTS[Math.floor(Math.random() * ROBLOX_VISUAL_ELEMENTS.length)];
       viralInjection = `BACKGROUND ELEMENT: "${randomElement}". AESTHETIC: High Gloss, Plastic, Vibrant.`;
   }
+  
+  if (isRestaurant) {
+      viralInjection = `DETAILS: Delicious high-poly food (Sushi, Boba, Pizza) on tables. Cozy warm interior.`;
+  }
+  
+  if (isShooter) {
+      viralInjection = `DETAILS: Holding tactical weapon (SCAR/AK-47 style toy gun). Muzzle flash. Crosshair UI element overlay.`;
+  }
 
   const finalPrompt = `
-    [TASK] Generate a ${isHighCtr ? 'HIGH QUALITY ROBLOX GAME ICON' : 'Cinematic'} 3D Render.
-    [SUBJECT] High-fidelity Roblox Avatar (${avatarSpecs}) in ${effectiveConfig.pose || 'Action Pose'}.
+    [STRICT CONSTRAINT] GENERATE A 3D RENDER OF A ROBLOX GAME. 
+    DO NOT GENERATE REAL LIFE HUMAN PHOTOS. DO NOT GENERATE YOUTUBE FACES.
+    SUBJECT MUST BE A ROBLOX AVATAR (Plastic Texture, Segmented Limbs).
+    
+    [SUBJECT] ${avatarSpecs} in ${effectiveConfig.pose || 'Action Pose'}.
     [SCENE] ${config.prompt}
     [STYLE] ${getStylePrompt(config.style)}
+    ${getRenderEnginePrompt(config.renderEngine)}
+    ${getCompositionPrompt(effectiveConfig.composition)}
     ${getExpressionPrompt(effectiveConfig.expression)}
     ${getLightingPrompt(effectiveConfig.lighting)}
     ${getParticlePrompt(effectiveConfig.particles)}
     ${viralInjection}
-    [CAMERA] ${isHighCtr ? 'Dynamic Angle, Focused on Character, Depth of Field' : 'Cinematic Composition, Rule of Thirds'}
-    [RENDER] Blender Cycles, 8K Resolution, High Poly, Ambient Occlusion.
-    [NEGATIVE] ${config.negativePrompt || "low quality, text, watermark, bad anatomy, blur, noise, distorted face"}
+    
+    [NEGATIVE PROMPT] ${config.negativePrompt || "real life, photorealistic human, skin texture, vlog, youtube thumbnail face, human eyes, nose, realistic hands, bad anatomy, text, watermark"}
   `;
 
   const parts: any[] = [];
