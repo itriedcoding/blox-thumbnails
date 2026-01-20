@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ThumbnailConfig, ThumbnailStyle, ModelType } from "../types";
+import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset } from "../types";
 
 // ==========================================
 // 🚀 GEMINI SERVICE (STANDARD)
@@ -40,10 +40,37 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
     horror: "PHOTOREALISTIC HORROR. Grimy textures. Rust. Blood/Dirt decals. Volumetric fog. Low key lighting. Unsettling realism. Film Grain. High contrast shadows.",
     rpg: "FANTASY RPG GAME ART. Magic effects with particle lighting. Metallic armor reflections with scratches. Detailed environment textures. Epic scale. God Rays. Bloom.",
     anime: "HIGH FIDELITY ANIME 3D. Stylized realism. Detailed particle effects. Glowing auras. Vibrant colors but realistic shading and material response. Cel-shaded rim lights.",
-    "high-ctr": "VIRAL YOUTUBE CLICKBAIT STYLE. 200% Saturation. Thick White Rim Lighting on Characters. Exaggerated Facial Expressions (Shocked/Screaming). Background Blur. Action Focus. 'Pop' visual style."
+    "high-ctr": "VIRAL YOUTUBE CLICKBAIT MASTERPIECE. EXTREME SATURATION (150%). THICK WHITE OUTLINES on characters. GLOWING EYES. EXPRESSIVE FACE. ACTION BLUR. RED ARROWS pointing to subject. BRIGHTEST COLORS POSSIBLE. 4K RENDER."
   };
   return styles[style] || styles.cinematic;
 };
+
+const getExpressionPrompt = (exp?: FaceExpression): string => {
+    switch (exp) {
+        case 'shocked': return "FACE EXPRESSION: EXTREME SHOCK, MOUTH OPEN WIDE, EYES POPPING OUT, HANDS ON CHEEKS.";
+        case 'happy': return "FACE EXPRESSION: OVERJOYED, BIGGEST SMILE, LAUGHING, TEARS OF JOY.";
+        case 'angry': return "FACE EXPRESSION: FURIOUS, GLOWING RED EYES, GRITTING TEETH, STEAM COMING FROM EARS.";
+        case 'evil': return "FACE EXPRESSION: SINISTER GRIN, SHADOWED FACE, VILLAINOUS LAUGH, GLOWING PURPLE EYES.";
+        case 'crying': return "FACE EXPRESSION: SOBBING, TEARS STREAMING DOWN FACE, SAD PUPPY EYES.";
+        case 'sigma': return "FACE EXPRESSION: STOIC CHAD FACE, CONFIDENT SMIRK, RAISED EYEBROW, MEWING.";
+        case 'silly': return "FACE EXPRESSION: TONGUE OUT, CROSSED EYES, GOOFY, DERPY.";
+        default: return "";
+    }
+};
+
+const getLightingPrompt = (light?: LightingPreset): string => {
+    switch (light) {
+        case 'neon-studio': return "LIGHTING: CYBERPUNK NEON STUDIO. Pink and Blue Rim Lights. Dark Background. High Contrast.";
+        case 'sun-drenched': return "LIGHTING: GOLDEN HOUR. Warm sunlight flooding the scene. Lens flares. Bright and Airy.";
+        case 'dark-void': return "LIGHTING: PITCH BLACK VOID. Only the character is lit by a single spotlight from above. Dramatic.";
+        case 'god-rays': return "LIGHTING: HEAVENLY. Massive volumetric light beams coming from the sky. Holy atmosphere.";
+        case 'cyber-punk': return "LIGHTING: NIGHT CITY. Street lamps, neon signs reflecting on wet ground. Green and Purple hues.";
+        case 'soft-box': return "LIGHTING: PROFESSIONAL STUDIO SOFTBOX. Even lighting, no harsh shadows, perfect for character showcase.";
+        default: return "";
+    }
+};
+
+const VIRAL_TOKENS = ["SECRET REVEALED", "IMPOSSIBLE", "99% FAIL", "HACKER", "ADMIN", "1,000,000 ROBUX", "LEGENDARY ITEM"];
 
 export const generateRandomPrompt = async (): Promise<string> => {
   try {
@@ -192,16 +219,25 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   const modelName = config.model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';    
   const isHighCtr = config.style === 'high-ctr' || config.style === 'simulator' || config.style === 'obby';
 
-  // [Previous Logic Preserved for Prompt Construction]
-  
   let avatarSpecs = config.avatarModel === 'R6' ? 'Classic R6 Blocky' : config.avatarModel === 'R15' ? 'Modern R15 Segmented' : 'Realistic Rthro';
   
+  // VIRAL INJECTION LOGIC
+  let viralInjection = "";
+  if (config.style === 'high-ctr') {
+      const randomViral = VIRAL_TOKENS[Math.floor(Math.random() * VIRAL_TOKENS.length)];
+      viralInjection = `SUBTLE BACKGROUND ELEMENT: "${randomViral}". MAKE IT CLICKBAIT.`;
+  }
+
   const finalPrompt = `
-    [TASK] Generate a ${isHighCtr ? 'VIRAL CLICKBAIT' : 'Cinematic'} 3D Roblox Render.
+    [TASK] Generate a ${isHighCtr ? 'VIRAL CLICKBAIT YOUTUBE THUMBNAIL' : 'Cinematic'} 3D Roblox Render.
     [SUBJECT] High-fidelity Roblox Avatar (${avatarSpecs}).
     [SCENE] ${config.prompt}
     [STYLE] ${getStylePrompt(config.style)}
-    [LIGHTING] ${isHighCtr ? 'Bright, Vibrant, Rim Lighting' : 'Cinematic, Volumetric Fog'}
+    ${getExpressionPrompt(config.expression)}
+    ${getLightingPrompt(config.lighting)}
+    ${viralInjection}
+    [CAMERA] ${isHighCtr ? 'Wide Angle, Close-up on Face, Dynamic Action Angle' : 'Cinematic Composition, Rule of Thirds'}
+    [RENDER] Unreal Engine 5 Style, Octane Render, 8K Texture Resolution.
     [NEGATIVE] ${config.negativePrompt || "low quality, text, watermark"}
   `;
 

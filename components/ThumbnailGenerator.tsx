@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount, expandPrompt } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset } from '../types';
 import { ImageEditor } from './ImageEditor';
 import { playSound } from '../App';
 
@@ -35,6 +35,23 @@ const POSES = [
     { id: 'driving', label: 'Drive', icon: '🚗' },
 ];
 
+const EXPRESSIONS = [
+    { id: 'default', label: 'Default', icon: '😐' },
+    { id: 'shocked', label: 'Shocked', icon: '😱' },
+    { id: 'happy', label: 'Joy', icon: '😁' },
+    { id: 'angry', label: 'Rage', icon: '🤬' },
+    { id: 'evil', label: 'Evil', icon: '😈' },
+    { id: 'sigma', label: 'Sigma', icon: '🗿' },
+];
+
+const LIGHTING = [
+    { id: 'default', label: 'Auto' },
+    { id: 'neon-studio', label: 'Neon Studio' },
+    { id: 'sun-drenched', label: 'Sun Drenched' },
+    { id: 'dark-void', label: 'Dark Void' },
+    { id: 'god-rays', label: 'God Rays' },
+];
+
 // IDEA DICE COMPONENTS
 const DICE_SUBJECTS = ["Noob", "Pro Gamer", "Zombie", "Hacker", "Princess", "Ninja", "Police Officer"];
 const DICE_ACTIONS = ["running from", "fighting", "discovering", "eating", "driving", "falling off"];
@@ -65,6 +82,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [avatarModel, setAvatarModel] = useState<AvatarModel>('R15'); 
   const [pose, setPose] = useState<string>('auto');
   
+  const [expression, setExpression] = useState<FaceExpression>('default');
+  const [lighting, setLighting] = useState<LightingPreset>('default');
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0); 
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -82,6 +102,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           setModel(remixConfig.model);
           setAvatarModel(remixConfig.avatarModel);
           setPose(remixConfig.pose || 'auto');
+          setExpression(remixConfig.expression || 'default');
+          setLighting(remixConfig.lighting || 'default');
           if (remixConfig.seed) setSeed(remixConfig.seed);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           playSound('blip');
@@ -189,7 +211,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 prompt, 
                 negativePrompt, 
                 referenceImage: referenceImage || undefined,
-                aspectRatio, style, model, avatarModel, pose, 
+                aspectRatio, style, model, avatarModel, pose, expression, lighting,
                 seed: currentSeed 
             };
             return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
@@ -305,8 +327,34 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     </div>
                 </div>
 
+                {/* Face & Lighting Controls (New) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-t border-white/5 pt-8">
+                     <div>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Face Rig</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {EXPRESSIONS.map((e) => (
+                                <button key={e.id} onClick={() => setExpression(e.id as any)} className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${expression === e.id ? 'bg-white/10 border-white text-white' : 'bg-transparent border-white/10 text-slate-500 hover:text-slate-300'}`}>
+                                    <span className="text-lg">{e.icon}</span>
+                                    <span className="text-[8px] font-bold uppercase mt-1">{e.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                     </div>
+                     <div>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Lighting Studio</label>
+                        <div className="grid grid-cols-2 gap-2">
+                             {LIGHTING.map((l) => (
+                                 <button key={l.id} onClick={() => setLighting(l.id as any)} className={`py-2 px-3 rounded text-[10px] font-bold uppercase border text-left transition-all ${lighting === l.id ? 'bg-white/10 border-neon-blue text-neon-blue' : 'bg-transparent border-white/10 text-slate-500 hover:text-slate-300'}`}>
+                                     {l.label}
+                                 </button>
+                             ))}
+                        </div>
+                     </div>
+                </div>
+
                 {/* Pose Selector */}
                 <div className="mb-8">
+                     <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Body Posture</label>
                      <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
                             {POSES.map((p) => (
                                 <button key={p.id} onClick={() => setPose(p.id)} className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${pose === p.id ? 'bg-white/10 border-neon-blue/50 text-white' : 'bg-black/30 border-white/5 text-slate-600 hover:text-slate-300'}`}>

@@ -11,35 +11,31 @@ interface VersionUpdate {
 
 const UPDATES: VersionUpdate[] = [
     {
-        version: "8.6.0",
+        version: "8.7.0",
         date: "Today",
         isMajor: true,
         changes: [
-            "ADDED: AI Vision Analysis - Inspect tool now critiques your thumbnail using Gemini Vision",
-            "ADDED: Smart Upscaler V2 - Dedicated refinement button in Gallery",
-            "ADDED: Before/After Comparison Slider for upscaled images",
-            "ADDED: Idea Dice - Randomize Subject, Action, and Setting independently",
-            "ADDED: Prompt History - Automatically saves last 10 prompts",
-            "ADDED: Editor Keyboard Shortcuts (Ctrl+Z, Arrows, Delete)",
-            "ADDED: Text Gradients (Gold, Silver, Neon Fire)",
-            "ADDED: Sticker Categories (Emoji, Roblox, UI)",
-            "ADDED: TikTok/Shorts Preview Mode & Editor Overlays",
-            "FIXED: Preview Modal Aspect Ratio & Layout",
-            "IMPROVED: YouTube Preview Mockup Realism"
+            "ADDED: Hyper-CTR Engine - Advanced prompt injection for viral thumbnails (Red Arrows, Glowing Eyes, 150% Saturation)",
+            "ADDED: Face Rig - Force specific avatar emotions (Shocked, Sigma, Crying, Rage)",
+            "ADDED: Lighting Studio - Control environmental lighting (Neon Studio, God Rays, Dark Void)",
+            "ADDED: Viral Keyword Injector - Automatically adds high-impact text to prompts in High-CTR mode",
+            "IMPROVED: Prompt Engineering Logic - Smarter token placement for higher fidelity",
+            "IMPROVED: UI Layout for Advanced Controls"
         ]
     },
     {
-        version: "8.5.0",
+        version: "8.6.0",
         date: "Previous",
         isMajor: false,
         changes: [
-            "ADDED: Magic Prompt Expander",
-            "ADDED: AI Background Removal Tool",
-            "ADDED: Favorites System in Gallery",
-            "ADDED: Audio Toggle in Navigation",
-            "ADDED: Batch Generation (1x, 2x, 4x)",
-            "ADDED: Negative Prompt Presets",
-            "INTEGRATION: Roblox Discovery API"
+            "ADDED: AI Vision Analysis",
+            "ADDED: Smart Upscaler V2",
+            "ADDED: Before/After Comparison",
+            "ADDED: Idea Dice",
+            "ADDED: Prompt History",
+            "ADDED: Editor Keyboard Shortcuts",
+            "ADDED: Text Gradients & Sticker Categories",
+            "ADDED: TikTok/Shorts Preview Mode"
         ]
     }
 ];

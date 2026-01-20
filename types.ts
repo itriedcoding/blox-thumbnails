@@ -3,6 +3,8 @@ export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rp
 export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R6' | 'R15' | 'Rthro';
 export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy' | 'updates';
+export type FaceExpression = 'default' | 'shocked' | 'happy' | 'angry' | 'evil' | 'crying' | 'sigma' | 'silly';
+export type LightingPreset = 'default' | 'neon-studio' | 'sun-drenched' | 'dark-void' | 'god-rays' | 'cyber-punk' | 'soft-box';
 
 declare global {
   interface AIStudio {
@@ -20,6 +22,8 @@ export interface GeneratedImage {
   model: ModelType;
   avatarModel: AvatarModel;
   pose?: string;
+  expression?: FaceExpression;
+  lighting?: LightingPreset;
   timestamp: number;
   seed?: number;
   isRefined?: boolean;
@@ -38,6 +42,8 @@ export interface ThumbnailConfig {
   model: ModelType;
   avatarModel: AvatarModel;
   pose?: string;
+  expression?: FaceExpression;
+  lighting?: LightingPreset;
   seed?: number;
 }
 
