@@ -23,7 +23,9 @@ export interface GeneratedImage {
   timestamp: number;
   seed?: number;
   isRefined?: boolean;
-  isFavorite?: boolean; // New Feature
+  parentId?: string; // For Before/After comparison
+  analysis?: string; // AI Vision critique
+  isFavorite?: boolean;
 }
 
 export interface ThumbnailConfig {

@@ -35,9 +35,15 @@ const POSES = [
     { id: 'driving', label: 'Drive', icon: '🚗' },
 ];
 
+// IDEA DICE COMPONENTS
+const DICE_SUBJECTS = ["Noob", "Pro Gamer", "Zombie", "Hacker", "Princess", "Ninja", "Police Officer"];
+const DICE_ACTIONS = ["running from", "fighting", "discovering", "eating", "driving", "falling off"];
+const DICE_SETTINGS = ["a burning city", "a rainbow parkour", "a secret cave", "the moon", "a luxury mansion", "a haunted school"];
+
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, remixConfig }) => {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS[0].value);
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
@@ -50,6 +56,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [batchSize, setBatchSize] = useState<number>(1);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'prompt' | 'avatar'>('prompt');
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
@@ -79,7 +86,16 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           window.scrollTo({ top: 0, behavior: 'smooth' });
           playSound('blip');
       }
+      
+      const savedHistory = localStorage.getItem('bloxthumb_prompt_history');
+      if (savedHistory) setPromptHistory(JSON.parse(savedHistory));
   }, [remixConfig]);
+
+  const addToHistory = (p: string) => {
+      const newHistory = [p, ...promptHistory.filter(x => x !== p)].slice(0, 10);
+      setPromptHistory(newHistory);
+      localStorage.setItem('bloxthumb_prompt_history', JSON.stringify(newHistory));
+  };
 
   const handleRandomize = async () => {
       setPrompt("Loading idea...");
@@ -88,6 +104,14 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           const randomPrompt = await generateRandomPrompt();
           setPrompt(randomPrompt);
       } catch (e) {}
+  };
+
+  const handleIdeaDice = () => {
+      playSound('blip');
+      const subj = DICE_SUBJECTS[Math.floor(Math.random() * DICE_SUBJECTS.length)];
+      const act = DICE_ACTIONS[Math.floor(Math.random() * DICE_ACTIONS.length)];
+      const set = DICE_SETTINGS[Math.floor(Math.random() * DICE_SETTINGS.length)];
+      setPrompt(`Roblox ${subj} ${act} ${set}, 4k render`);
   };
 
   const handleApplyTemplate = (t: PromptTemplate) => {
@@ -151,6 +175,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     if (!prompt.trim()) { setError("Please enter a description."); return; }
     if (getActiveNodeCount() === 0) { setError("CLUSTER_OFFLINE: No Valid API Keys found."); return; }
 
+    addToHistory(prompt);
     playSound('success');
     setIsGenerating(true);
     setProgress(0);
@@ -201,9 +226,26 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
+                            onFocus={() => setShowHistory(true)}
                             placeholder="Describe your scene..."
-                            className="w-full h-40 bg-[#050508] rounded-xl p-6 text-lg text-white placeholder-slate-700 outline-none resize-none font-light tracking-wide"
+                            className="w-full h-40 bg-[#050508] rounded-xl p-6 text-lg text-white placeholder-slate-700 outline-none resize-none font-light tracking-wide z-10 relative"
                         />
+                        
+                        {/* Prompt History Dropdown */}
+                        {showHistory && promptHistory.length > 0 && (
+                            <div className="absolute top-[100%] left-0 right-0 z-50 bg-[#0f0f12] border border-white/10 rounded-b-xl shadow-2xl max-h-40 overflow-y-auto">
+                                <div className="flex justify-between px-4 py-2 bg-white/5 text-[9px] uppercase font-bold text-slate-500">
+                                    <span>Recent Prompts</span>
+                                    <button onClick={() => setShowHistory(false)}>Close</button>
+                                </div>
+                                {promptHistory.map((p, i) => (
+                                    <button key={i} onClick={() => { setPrompt(p); setShowHistory(false); }} className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-white/10 border-b border-white/5 truncate">
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex justify-between items-center px-6 py-4 bg-[#050508] border-t border-white/5 rounded-b-xl gap-2 overflow-x-auto">
                             <button onClick={() => setShowLibrary(true)} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-white transition-colors whitespace-nowrap">
                                 📚 Templates
@@ -278,7 +320,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                  {/* Batch & Model */}
                  <div className="flex items-center justify-between border-t border-white/5 pt-6">
                      <div className="flex items-center gap-4">
-                        <button onClick={handleRandomize} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white">🎲 Random Prompt</button>
+                        <button onClick={handleRandomize} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white">🎲 Random</button>
+                        <div className="h-4 w-px bg-white/10"></div>
+                        <button onClick={handleIdeaDice} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-neon-blue transition-colors">🎲 Idea Dice</button>
                         <div className="h-4 w-px bg-white/10"></div>
                         <div className="flex items-center gap-2">
                              <span className="text-[10px] font-bold uppercase text-slate-500">Batch:</span>

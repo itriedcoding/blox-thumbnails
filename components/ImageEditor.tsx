@@ -10,13 +10,21 @@ interface ImageEditorProps {
 }
 
 type ToolType = 'move' | 'eraser' | 'magic-wand' | 'text' | 'sticker' | 'background';
+type TextGradient = 'none' | 'gold' | 'silver' | 'neon-fire';
 
-const STICKERS_LIST = [
-    { id: 'robux', content: '💰' }, { id: 'star', content: '⭐' }, { id: 'sword', content: '⚔️' }, 
-    { id: 'heart', content: '❤️' }, { id: 'fire', content: '🔥' }, { id: 'skull', content: '💀' },
-    { id: 'crown', content: '👑' }, { id: 'pet', content: '🐶' }, { id: 'check', content: '✅' },
-    { id: 'blox', content: '🟦' }, { id: 'noob', content: '🤖' }, { id: 'win', content: '🏆' }
-];
+const STICKER_CATEGORIES = {
+    'emoji': [
+        { id: 'star', content: '⭐' }, { id: 'heart', content: '❤️' }, { id: 'fire', content: '🔥' }, 
+        { id: 'skull', content: '💀' }, { id: 'crown', content: '👑' }, { id: 'check', content: '✅' }
+    ],
+    'roblox': [
+        { id: 'robux', content: '💰' }, { id: 'blox', content: '🟦' }, { id: 'noob', content: '🤖' }, 
+        { id: 'sword', content: '⚔️' }, { id: 'shield', content: '🛡️' }
+    ],
+    'ui': [
+         { id: 'arrow', content: '⬆️' }, { id: 'new', content: '🆕' }, { id: 'warn', content: '⚠️' }
+    ]
+};
 
 export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose, onSave }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,13 +34,13 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyStep, setHistoryStep] = useState(-1);
   
-  // Tool Settings
   const [brushSize, setBrushSize] = useState(30);
   const [tolerance, setTolerance] = useState(30);
 
-  // Advanced Visuals
   const [filters, setFilters] = useState({ brightness: 100, contrast: 100, saturation: 100, hue: 0, blur: 0, pixelate: 0 });
   const [overlay, setOverlay] = useState<OverlayType>('none');
+  const [socialCrop, setSocialCrop] = useState<'none' | 'tiktok' | 'youtube'>('none');
+
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const [bgColor, setBgColor] = useState('#000000');
   const [bgType, setBgType] = useState<'transparent' | 'color' | 'image'>('transparent');
@@ -41,11 +49,15 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
   const [text, setText] = useState('');
   const [textPos, setTextPos] = useState({ x: 50, y: 50 });
   const [textColor, setTextColor] = useState('#ffffff');
+  const [textGradient, setTextGradient] = useState<TextGradient>('none');
   const [isDraggingText, setIsDraggingText] = useState(false);
   const [textStyle3D, setTextStyle3D] = useState(true);
   const [fontSize, setFontSize] = useState(80);
-  const [stickers, setStickers] = useState<Sticker[]>([]);
   
+  const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [activeStickerTab, setActiveStickerTab] = useState<'emoji' | 'roblox' | 'ui'>('emoji');
+  
+  // Initialization
   useEffect(() => {
     const img = new Image();
     img.src = initialImage;
@@ -62,6 +74,20 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
         }
     };
   }, [initialImage]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+          if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+          if (e.key === 'ArrowUp') { setTextPos(p => ({...p, y: p.y - 1})); }
+          if (e.key === 'ArrowDown') { setTextPos(p => ({...p, y: p.y + 1})); }
+          if (e.key === 'ArrowLeft') { setTextPos(p => ({...p, x: p.x - 1})); }
+          if (e.key === 'ArrowRight') { setTextPos(p => ({...p, x: p.x + 1})); }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [historyStep, history]); // Dependencies needed for undo/redo closure
 
   const saveHistory = useCallback(() => {
       if (!canvasRef.current) return;
@@ -87,6 +113,19 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
       }
   };
 
+  const redo = () => {
+     if (historyStep < history.length - 1 && canvasRef.current) {
+         const ctx = canvasRef.current.getContext('2d');
+         if (ctx) {
+             const nextData = history[historyStep + 1];
+             ctx.putImageData(nextData, 0, 0);
+             setHistoryStep(historyStep + 1);
+             playSound('blip');
+         }
+     }
+  };
+
+  // ... (Existing Draw/Wand Logic Preserved but omitted for brevity if unchanged, inserting full logic for safety)
   const handleDraw = (e: React.MouseEvent) => {
       if (activeTool !== 'eraser') return;
       if (e.buttons !== 1) return;
@@ -221,16 +260,27 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
            }
       }
 
-      // 4. Text & Stickers (simplified from previous)
+      // 4. Text & Stickers
       if (text) {
           const x = textPos.x / 100 * finalCanvas.width;
           const y = textPos.y / 100 * finalCanvas.height;
           fCtx.font = `900 ${fontSize}px "Outfit", sans-serif`;
           fCtx.textAlign = 'center'; fCtx.textBaseline = 'middle';
+          
           if (textStyle3D) {
             fCtx.fillStyle = '#1a1a1a'; for(let i=1; i<=8; i++) fCtx.fillText(text.toUpperCase(), x+i, y+i);
           }
-          fCtx.fillStyle = textColor; fCtx.fillText(text.toUpperCase(), x, y);
+          
+          if (textGradient !== 'none') {
+             const grad = fCtx.createLinearGradient(x - fontSize, y, x + fontSize, y);
+             if (textGradient === 'gold') { grad.addColorStop(0, '#FFD700'); grad.addColorStop(0.5, '#FDB931'); grad.addColorStop(1, '#FFD700'); }
+             if (textGradient === 'silver') { grad.addColorStop(0, '#C0C0C0'); grad.addColorStop(0.5, '#E0E0E0'); grad.addColorStop(1, '#C0C0C0'); }
+             if (textGradient === 'neon-fire') { grad.addColorStop(0, '#ff0000'); grad.addColorStop(0.5, '#ffff00'); grad.addColorStop(1, '#ff0000'); }
+             fCtx.fillStyle = grad;
+          } else {
+             fCtx.fillStyle = textColor; 
+          }
+          fCtx.fillText(text.toUpperCase(), x, y);
       }
       stickers.forEach(s => fCtx.fillText(s.content, s.x * finalCanvas.width, s.y * finalCanvas.height));
       onSave(finalCanvas.toDataURL('image/png'));
@@ -252,7 +302,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
 
             {/* Canvas Area */}
             <div className="flex-1 bg-[#0f0f12] relative overflow-hidden flex items-center justify-center">
-                {/* Background Preview Layer */}
+                {/* Background Preview */}
                 <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
                      <div style={{
                          width: canvasRef.current?.width || '100%', 
@@ -270,13 +320,32 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                     onMouseUp={() => { if(activeTool==='eraser') saveHistory(); setIsDraggingText(false); }}
                     className={`relative z-10 max-w-[90vw] max-h-[80vh] object-contain ${activeTool === 'move' ? 'cursor-grab' : 'cursor-crosshair'}`}
                 />
+
+                {/* Social Crop Overlays */}
+                {socialCrop === 'tiktok' && (
+                    <div className="absolute inset-0 z-50 pointer-events-none border-x-[100px] border-black/80 flex flex-col justify-between p-10">
+                        <div className="text-center text-white/50 text-xs font-bold uppercase">9:16 Safe Zone</div>
+                        <div className="h-20 bg-red-500/20 w-full flex items-center justify-center text-red-300 text-[10px] uppercase font-bold">UI Obstruction Zone</div>
+                    </div>
+                )}
                 
-                {text && <div className="absolute z-20 pointer-events-none" style={{ left: `${textPos.x}%`, top: `${textPos.y}%`, transform: 'translate(-50%, -50%)', fontSize: `${fontSize*0.5}px`, color: textColor, fontWeight: 900, fontFamily: 'Outfit' }}>{text.toUpperCase()}</div>}
+                {text && (
+                    <div className="absolute z-20 pointer-events-none" style={{ 
+                        left: `${textPos.x}%`, top: `${textPos.y}%`, transform: 'translate(-50%, -50%)', 
+                        fontSize: `${fontSize*0.5}px`, 
+                        color: textGradient === 'none' ? textColor : 'transparent',
+                        backgroundImage: textGradient === 'gold' ? 'linear-gradient(to right, #FFD700, #FDB931)' : textGradient === 'neon-fire' ? 'linear-gradient(to right, red, yellow)' : textGradient === 'silver' ? 'linear-gradient(to right, #C0C0C0, #E0E0E0)' : 'none',
+                        WebkitBackgroundClip: textGradient !== 'none' ? 'text' : 'border-box',
+                        fontWeight: 900, fontFamily: 'Outfit' 
+                    }}>
+                        {text.toUpperCase()}
+                    </div>
+                )}
                 {isProcessing && <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center text-white font-bold">PROCESSING...</div>}
             </div>
 
             {/* Properties */}
-            <div className="w-full md:w-80 bg-[#15151a] border-l border-white/5 p-6 overflow-y-auto">
+            <div className="w-full md:w-80 bg-[#15151a] border-l border-white/5 p-6 overflow-y-auto custom-scrollbar">
                 <div className="flex justify-between mb-6"><h3 className="font-bold text-white uppercase">Properties</h3><button onClick={onClose} className="text-red-400 text-xs">EXIT</button></div>
                 
                 {activeTool === 'background' && (
@@ -296,18 +365,50 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                     </div>
                 )}
 
-                {activeTool === 'eraser' && <input type="range" min="5" max="100" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full" />}
-                {activeTool === 'magic-wand' && <button onClick={handleAutoRemove} className="w-full py-3 bg-white text-black font-bold text-xs uppercase rounded mb-4">Auto-Remove BG</button>}
-                
+                {activeTool === 'sticker' && (
+                    <div className="space-y-4 animate-fade-in-up">
+                        <div className="flex gap-2 mb-2">
+                             {['emoji', 'roblox', 'ui'].map(c => (
+                                 <button key={c} onClick={() => setActiveStickerTab(c as any)} className={`flex-1 py-1 text-[10px] uppercase border rounded ${activeStickerTab === c ? 'bg-white text-black' : 'border-white/10 text-slate-500'}`}>{c}</button>
+                             ))}
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                             {STICKER_CATEGORIES[activeStickerTab].map(s => (
+                                <button key={s.id} onClick={() => setStickers(prev => [...prev, {...s, x:0.5, y:0.5, scale:1}])} className="aspect-square flex items-center justify-center text-xl bg-white/5 rounded-lg hover:bg-white/20 transition-colors">
+                                    {s.content}
+                                </button>
+                             ))}
+                        </div>
+                    </div>
+                )}
+
                 {activeTool === 'text' && (
                     <div className="space-y-4">
                         <input type="text" value={text} onChange={(e) => setText(e.target.value)} className="w-full bg-black border border-white/10 p-2 text-white" placeholder="Text..." />
                         <input type="range" min="20" max="200" value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="w-full" />
-                        <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-10" />
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                             <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded" />
+                             <select value={textGradient} onChange={(e) => setTextGradient(e.target.value as any)} className="bg-black border border-white/10 text-xs text-white rounded">
+                                 <option value="none">Solid</option>
+                                 <option value="gold">Gold</option>
+                                 <option value="silver">Silver</option>
+                                 <option value="neon-fire">Neon Fire</option>
+                             </select>
+                        </div>
                     </div>
                 )}
 
                 <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Safe Zone Overlay</label>
+                        <div className="grid grid-cols-3 gap-2">
+                             {['none', 'tiktok', 'youtube'].map(o => (
+                                <button key={o} onClick={() => setSocialCrop(o as any)} className={`py-2 text-[10px] uppercase border ${socialCrop === o ? 'bg-white text-black' : 'border-white/10 text-slate-500'}`}>{o}</button>
+                             ))}
+                        </div>
+                    </div>
+
                     <div>
                         <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Atmosphere</label>
                         <div className="grid grid-cols-3 gap-2">
@@ -318,7 +419,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                     </div>
                     
                     <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Blur Effect</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Blur</label>
                         <input type="range" min="0" max="10" value={filters.blur} onChange={(e) => setFilters({...filters, blur: Number(e.target.value)})} className="w-full" />
                     </div>
                 </div>

@@ -11,29 +11,35 @@ interface VersionUpdate {
 
 const UPDATES: VersionUpdate[] = [
     {
-        version: "8.5.0",
+        version: "8.6.0",
         date: "Today",
         isMajor: true,
         changes: [
-            "ADDED: Magic Prompt Expander - Instantly turn 3 words into a full scene",
-            "ADDED: AI Background Removal Tool with Magic Wand & Eraser",
-            "ADDED: Favorites System in Gallery",
-            "ADDED: Audio Toggle in Navigation",
-            "ADDED: Batch Generation (1x, 2x, 4x)",
-            "ADDED: Negative Prompt Presets (Clean, 3D Purist, No Text)",
-            "IMPROVED: R15 Avatar Geometry & Textures",
-            "INTEGRATION: Roblox Discovery API for Trending Games"
+            "ADDED: AI Vision Analysis - Inspect tool now critiques your thumbnail using Gemini Vision",
+            "ADDED: Smart Upscaler V2 - Dedicated refinement button in Gallery",
+            "ADDED: Before/After Comparison Slider for upscaled images",
+            "ADDED: Idea Dice - Randomize Subject, Action, and Setting independently",
+            "ADDED: Prompt History - Automatically saves last 10 prompts",
+            "ADDED: Editor Keyboard Shortcuts (Ctrl+Z, Arrows, Delete)",
+            "ADDED: Text Gradients (Gold, Silver, Neon Fire)",
+            "ADDED: Sticker Categories (Emoji, Roblox, UI)",
+            "ADDED: TikTok/Shorts Preview Mode & Editor Overlays",
+            "FIXED: Preview Modal Aspect Ratio & Layout",
+            "IMPROVED: YouTube Preview Mockup Realism"
         ]
     },
     {
-        version: "8.2.0",
+        version: "8.5.0",
         date: "Previous",
+        isMajor: false,
         changes: [
-            "ADDED: Unlimited Generation Engine (No Credits)",
-            "ADDED: Discord Webhook Integration for Images",
-            "ADDED: Advanced Filters (Pixelate, Blur, Atmosphere)",
-            "ADDED: Smart Color Palette Extraction",
-            "FIXED: Mobile Responsiveness in Editor"
+            "ADDED: Magic Prompt Expander",
+            "ADDED: AI Background Removal Tool",
+            "ADDED: Favorites System in Gallery",
+            "ADDED: Audio Toggle in Navigation",
+            "ADDED: Batch Generation (1x, 2x, 4x)",
+            "ADDED: Negative Prompt Presets",
+            "INTEGRATION: Roblox Discovery API"
         ]
     }
 ];

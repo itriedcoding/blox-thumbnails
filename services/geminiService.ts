@@ -88,13 +88,42 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
   }
 };
 
+export const analyzeImage = async (base64Image: string): Promise<string> => {
+    const matches = base64Image.match(/^data:(.+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) throw new Error("Invalid base64");
+
+    const parts = [
+        { inlineData: { mimeType: matches[1], data: matches[2] } },
+        { text: `[TASK: ANALYZE ROBLOX THUMBNAIL]
+        Act as a professional YouTube algorithm expert.
+        1. Rate the Click-Through Rate (CTR) potential (1-10).
+        2. Describe the main subject.
+        3. Suggest ONE specific improvement for lighting or composition.
+        Keep it concise (under 50 words).` }
+    ];
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts }
+        });
+        return response.text?.trim() || "Analysis unavailable.";
+    } catch (e: any) {
+        return "Failed to analyze image.";
+    }
+};
+
 export const refineImage = async (base64Image: string, prompt: string): Promise<string> => {
     const matches = base64Image.match(/^data:(.+);base64,(.+)$/);
     if (!matches || matches.length !== 3) throw new Error("Invalid base64");
 
     const parts = [
         { inlineData: { mimeType: matches[1], data: matches[2] } },
-        { text: `[TASK: UPSCALE] Input is a Roblox GFX. Increase resolution and detail. Maintain composition. Context: ${prompt}` }
+        { text: `[TASK: UPSCALE & REMASTER] 
+        Input is a Roblox GFX render. 
+        ACTION: Enhance details, fix aliasing, improve lighting, and increase perceived resolution.
+        CONSTRAINT: Keep the exact same composition and characters. Do not change the scene content.
+        Context: ${prompt}` }
     ];
 
     try {
@@ -164,8 +193,6 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   const isHighCtr = config.style === 'high-ctr' || config.style === 'simulator' || config.style === 'obby';
 
   // [Previous Logic Preserved for Prompt Construction]
-  // Simplified for brevity in this XML output, assuming logic remains similar but utilizing the helper functions
-  // To save tokens, I will output the critical parts of the prompt construction update.
   
   let avatarSpecs = config.avatarModel === 'R6' ? 'Classic R6 Blocky' : config.avatarModel === 'R15' ? 'Modern R15 Segmented' : 'Realistic Rthro';
   

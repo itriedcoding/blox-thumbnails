@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { GeneratedImage } from '../types';
-import { refineImage } from '../services/geminiService';
+import { refineImage, analyzeImage } from '../services/geminiService';
 import { playSound } from '../App';
 
 interface GalleryProps {
   images: GeneratedImage[];
   onRemix: (img: GeneratedImage) => void;
-  onToggleFavorite: (id: string) => void; // New Prop
+  onToggleFavorite: (id: string) => void; 
 }
 
 export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavorite }) => {
   const [lightboxImg, setLightboxImg] = useState<GeneratedImage | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'none' | 'youtube' | 'roblox'>('none');
+  const [previewMode, setPreviewMode] = useState<'none' | 'youtube' | 'roblox' | 'tiktok'>('none');
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
   const [palette, setPalette] = useState<string[]>([]);
+  
   const [isRefining, setIsRefining] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisText, setAnalysisText] = useState<string | null>(null);
+  
+  // Comparison State
+  const [refinedImage, setRefinedImage] = useState<string | null>(null);
+  const [compareSlider, setCompareSlider] = useState(50);
 
   const displayedImages = showFavoritesOnly ? images.filter(i => i.isFavorite) : images;
 
   useEffect(() => {
-      if (lightboxImg) extractPalette(lightboxImg.data);
+      if (lightboxImg) {
+          extractPalette(lightboxImg.data);
+          setRefinedImage(null);
+          setAnalysisText(null);
+      }
   }, [lightboxImg]);
 
   const extractPalette = (base64: string) => {
@@ -33,9 +44,8 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
           canvas.width = 100; canvas.height = 100;
           ctx.drawImage(img, 0, 0, 100, 100);
           const data = ctx.getImageData(0,0,100,100).data;
-          // Simple sampling
           const colors: string[] = [];
-          for(let i=0; i<data.length; i+=400) { // sparse sample
+          for(let i=0; i<data.length; i+=400) { 
              const hex = `#${((1 << 24) + (data[i] << 16) + (data[i + 1] << 8) + data[i + 2]).toString(16).slice(1)}`;
              if(!colors.includes(hex)) colors.push(hex);
              if(colors.length >= 5) break;
@@ -44,26 +54,41 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
       }
   };
 
-  const handleDownload = (img: GeneratedImage) => {
-      const link = document.createElement('a');
-      // If jpg needed, we need canvas conversion, but for now simple rename works for many browsers or base64 manipulation
-      // To do it properly:
-      if (downloadFormat === 'jpg') {
-          const i = new Image();
-          i.src = img.data;
-          i.onload = () => {
-              const c = document.createElement('canvas');
-              c.width = i.width; c.height = i.height;
-              c.getContext('2d')?.drawImage(i,0,0);
-              link.href = c.toDataURL('image/jpeg', 0.9);
-              link.download = `bloxthumb-${img.id}.jpg`;
-              link.click();
-          }
-      } else {
-          link.href = img.data;
-          link.download = `bloxthumb-${img.id}.png`;
-          link.click();
+  const handleRefine = async () => {
+      if (!lightboxImg) return;
+      setIsRefining(true);
+      playSound('blip');
+      try {
+          const refinedData = await refineImage(lightboxImg.data, lightboxImg.prompt);
+          setRefinedImage(refinedData);
+          playSound('success');
+      } catch (e) {
+          alert("Refinement failed.");
+      } finally {
+          setIsRefining(false);
       }
+  };
+
+  const handleAnalyze = async () => {
+      if (!lightboxImg) return;
+      setIsAnalyzing(true);
+      playSound('blip');
+      try {
+          const analysis = await analyzeImage(lightboxImg.data);
+          setAnalysisText(analysis);
+          playSound('success');
+      } catch (e) {
+          setAnalysisText("Analysis failed.");
+      } finally {
+          setIsAnalyzing(false);
+      }
+  };
+
+  const handleDownload = (dataUrl: string, id: string) => {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `bloxthumb-${id}.${downloadFormat}`;
+      link.click();
   };
 
   if (images.length === 0) return null;
@@ -107,7 +132,7 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2 justify-center flex-wrap">
                          <button onClick={() => onRemix(img)} className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase rounded hover:bg-white hover:text-black transition">Remix</button>
-                         <button onClick={() => handleDownload(img)} className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase rounded hover:bg-white hover:text-black transition">Save</button>
+                         <button onClick={() => handleDownload(img.data, img.id)} className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase rounded hover:bg-white hover:text-black transition">Save</button>
                     </div>
                 </div>
             </div>
@@ -123,71 +148,115 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
                 
                 {/* Main Image View */}
                 <div className="flex-1 relative flex items-center justify-center w-full h-full">
-                    {previewMode === 'none' && (
-                        <img src={lightboxImg.data} className="max-h-[80vh] max-w-full object-contain shadow-2xl rounded-lg border border-white/10" />
-                    )}
-                    
-                    {/* YouTube Preview Mockup */}
-                    {previewMode === 'youtube' && (
-                        <div className="bg-[#0f0f0f] p-4 rounded-xl border border-white/10 max-w-2xl w-full">
-                            <div className="aspect-video w-full rounded-xl overflow-hidden relative mb-3">
-                                <img src={lightboxImg.data} className="w-full h-full object-cover" />
-                                <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1 rounded">10:24</div>
-                            </div>
-                            <div className="flex gap-3">
-                                <div className="w-9 h-9 rounded-full bg-slate-700"></div>
-                                <div className="flex-1">
-                                    <h4 className="text-white font-bold text-sm leading-tight mb-1 line-clamp-2">{lightboxImg.prompt.substring(0, 60)}...</h4>
-                                    <p className="text-[#aaa] text-xs">BloxThumb Channel • 1.2M views • 2 hours ago</p>
+                    {/* Render Area */}
+                    <div className="relative shadow-2xl rounded-lg overflow-hidden border border-white/10 max-h-[80vh]">
+                        {/* Comparison Logic */}
+                        {refinedImage ? (
+                            <div className="relative group/compare cursor-col-resize select-none" 
+                                 onMouseMove={(e) => {
+                                     const rect = e.currentTarget.getBoundingClientRect();
+                                     setCompareSlider(((e.clientX - rect.left) / rect.width) * 100);
+                                 }}
+                                 onTouchMove={(e) => {
+                                      const rect = e.currentTarget.getBoundingClientRect();
+                                      setCompareSlider(((e.touches[0].clientX - rect.left) / rect.width) * 100);
+                                 }}
+                            >
+                                <img src={refinedImage} className="max-h-[80vh] object-contain pointer-events-none" />
+                                <div className="absolute inset-0 overflow-hidden border-r-2 border-white pointer-events-none" style={{ width: `${compareSlider}%` }}>
+                                    <img src={lightboxImg.data} className="max-h-[80vh] object-contain" />
                                 </div>
+                                <div className="absolute top-2 left-2 bg-black/50 px-2 py-1 text-[10px] font-bold text-white rounded pointer-events-none">ORIGINAL</div>
+                                <div className="absolute top-2 right-2 bg-neon-blue/50 px-2 py-1 text-[10px] font-bold text-white rounded pointer-events-none">UPSCALED</div>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <img src={lightboxImg.data} className="max-h-[80vh] max-w-full object-contain" />
+                        )}
 
-                    {/* Roblox Preview Mockup */}
-                    {previewMode === 'roblox' && (
-                         <div className="bg-[#191b1d] p-6 rounded-xl border border-white/10 max-w-2xl w-full font-sans">
-                            <h2 className="text-white text-2xl font-bold mb-4">Game Details</h2>
-                            <div className="aspect-video w-full rounded-xl overflow-hidden relative mb-4 shadow-lg">
-                                <img src={lightboxImg.data} className="w-full h-full object-cover" />
+                        {/* Overlays */}
+                        {previewMode === 'youtube' && (
+                             <div className="absolute inset-0 pointer-events-none flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 to-transparent">
+                                 <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-bold px-1 rounded">10:24</div>
+                             </div>
+                        )}
+                        {previewMode === 'tiktok' && (
+                             <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4">
+                                 <div className="text-white font-bold drop-shadow-md">Following | For You</div>
+                                 <div className="flex flex-col gap-4 items-end mb-10">
+                                     <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur"></div>
+                                     <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur"></div>
+                                     <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur"></div>
+                                 </div>
+                             </div>
+                        )}
+                    </div>
+                    
+                    {/* YouTube Context (Below Image) */}
+                    {previewMode === 'youtube' && (
+                        <div className="absolute -bottom-20 left-0 right-0 bg-[#0f0f0f] p-4 rounded-xl border border-white/10 flex gap-3 animate-fade-in-up">
+                            <div className="w-9 h-9 rounded-full bg-slate-700 shrink-0"></div>
+                            <div className="flex-1">
+                                <h4 className="text-white font-bold text-sm leading-tight mb-1 line-clamp-2">{lightboxImg.prompt}</h4>
+                                <p className="text-[#aaa] text-xs">BloxThumb Channel • 1.2M views • 2 hours ago</p>
                             </div>
-                            <h3 className="text-white text-xl font-bold mb-2">BloxThumb Experience [NEW]</h3>
-                            <div className="flex gap-4 text-slate-400 text-sm border-b border-white/10 pb-4 mb-4">
-                                <span>By BloxThumb</span>
-                            </div>
-                            <button className="w-full py-3 bg-white text-black font-bold rounded-lg">Play</button>
                         </div>
                     )}
                 </div>
 
                 {/* Sidebar Info */}
-                <div className="w-full md:w-80 bg-[#15151a] p-6 rounded-2xl border border-white/10 h-auto">
-                    <div className="flex justify-between items-center mb-6">
+                <div className="w-full md:w-80 bg-[#15151a] p-6 rounded-2xl border border-white/10 h-auto flex flex-col gap-6 overflow-y-auto max-h-[90vh] custom-scrollbar">
+                    <div className="flex justify-between items-center">
                         <h3 className="font-bold text-white uppercase tracking-wider">Inspect</h3>
                         <button onClick={() => setLightboxImg(null)} className="text-slate-400 hover:text-white">✕</button>
                     </div>
 
-                    <div className="space-y-6">
-                        {/* Palette */}
-                        <div>
-                            <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2 block">Extracted Palette</label>
-                            <div className="flex h-8 rounded-lg overflow-hidden">
-                                {palette.map((c, i) => (
-                                    <div key={i} className="flex-1" style={{ backgroundColor: c }} title={c}></div>
-                                ))}
-                            </div>
-                        </div>
+                    {/* Upscale / Analyze Actions */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <button onClick={handleRefine} disabled={isRefining} className="py-3 bg-neon-blue/10 border border-neon-blue/30 rounded-lg text-neon-blue font-bold text-[10px] uppercase hover:bg-neon-blue/20 disabled:opacity-50">
+                            {isRefining ? 'Processing...' : '⚡ Smart Upscale'}
+                        </button>
+                        <button onClick={handleAnalyze} disabled={isAnalyzing} className="py-3 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-400 font-bold text-[10px] uppercase hover:bg-purple-500/20 disabled:opacity-50">
+                            {isAnalyzing ? 'Thinking...' : '🧠 AI Analyze'}
+                        </button>
+                    </div>
 
-                        {/* Preview Context */}
-                        <div>
-                            <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2 block">Context Preview</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                <button onClick={() => setPreviewMode('none')} className={`py-2 text-[10px] font-bold uppercase rounded border ${previewMode === 'none' ? 'bg-white text-black' : 'border-white/10 text-slate-400'}`}>Raw</button>
-                                <button onClick={() => setPreviewMode('youtube')} className={`py-2 text-[10px] font-bold uppercase rounded border ${previewMode === 'youtube' ? 'bg-red-600 text-white' : 'border-white/10 text-slate-400'}`}>YT</button>
-                                <button onClick={() => setPreviewMode('roblox')} className={`py-2 text-[10px] font-bold uppercase rounded border ${previewMode === 'roblox' ? 'bg-blue-600 text-white' : 'border-white/10 text-slate-400'}`}>RBLX</button>
-                            </div>
+                    {/* Analysis Result */}
+                    {analysisText && (
+                        <div className="p-4 bg-black/40 rounded-lg border border-white/10 text-xs text-slate-300 leading-relaxed animate-fade-in-up">
+                            <h4 className="font-bold text-white mb-2 uppercase text-[10px] tracking-widest text-purple-400">Vision Report</h4>
+                            {analysisText}
                         </div>
+                    )}
 
+                    {/* Palette */}
+                    <div>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2 block">Extracted Palette</label>
+                        <div className="flex h-8 rounded-lg overflow-hidden">
+                            {palette.map((c, i) => (
+                                <div key={i} className="flex-1" style={{ backgroundColor: c }} title={c}></div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Preview Context */}
+                    <div>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2 block">Context Preview</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['none', 'youtube', 'roblox', 'tiktok'].map(m => (
+                                <button key={m} onClick={() => setPreviewMode(m as any)} className={`py-2 text-[10px] font-bold uppercase rounded border ${previewMode === m ? 'bg-white text-black' : 'border-white/10 text-slate-400'}`}>
+                                    {m}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {refinedImage && (
+                        <button onClick={() => handleDownload(refinedImage, `${lightboxImg.id}-upscaled`)} className="w-full py-3 bg-green-500/20 text-green-400 border border-green-500/50 rounded-lg font-bold uppercase text-xs hover:bg-green-500/30">
+                            Download Upscaled
+                        </button>
+                    )}
+
+                    <div className="mt-auto pt-6 border-t border-white/10">
                         <button onClick={() => onToggleFavorite(lightboxImg.id)} className={`w-full py-3 rounded-lg font-bold uppercase text-xs border ${lightboxImg.isFavorite ? 'bg-neon-pink border-neon-pink text-white' : 'border-white/20 text-white hover:bg-white/10'}`}>
                             {lightboxImg.isFavorite ? '★ Remove Favorite' : '☆ Add to Favorites'}
                         </button>
