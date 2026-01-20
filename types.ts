@@ -23,6 +23,7 @@ export interface GeneratedImage {
   timestamp: number;
   seed?: number;
   isRefined?: boolean;
+  isFavorite?: boolean; // New Feature
 }
 
 export interface ThumbnailConfig {
@@ -75,5 +76,5 @@ export interface Sticker {
   scale: number;
 }
 
-export type FilterPreset = 'none' | 'matrix' | 'warm' | 'cool' | 'vintage';
-export type OverlayType = 'none' | 'vignette' | 'scanlines' | 'noise';
+export type FilterPreset = 'none' | 'matrix' | 'warm' | 'cool' | 'vintage' | 'pixelate' | 'blur';
+export type OverlayType = 'none' | 'vignette' | 'scanlines' | 'noise' | 'rain' | 'snow' | 'embers';

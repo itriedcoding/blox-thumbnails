@@ -9,8 +9,18 @@ import { Gallery } from './components/Gallery';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
 import { sendToDiscord } from './services/discordService';
 
-// Simple Audio Synthesis for UI Sounds (No external files)
+let audioEnabled = true;
+
+export const isAudioEnabled = () => audioEnabled;
+export const toggleAudio = () => {
+    audioEnabled = !audioEnabled;
+    localStorage.setItem('bloxthumb_audio', String(audioEnabled));
+    return audioEnabled;
+};
+
+// Simple Audio Synthesis for UI Sounds
 export const playSound = (type: 'blip' | 'success') => {
+    if (!audioEnabled) return;
     try {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         if (!AudioContext) return;
@@ -49,6 +59,8 @@ function App() {
       if (saved) {
         setGeneratedImages(JSON.parse(saved));
       }
+      const savedAudio = localStorage.getItem('bloxthumb_audio');
+      if (savedAudio !== null) audioEnabled = savedAudio === 'true';
     } catch (e) {
       console.error("Failed to load history", e);
     }
@@ -73,7 +85,8 @@ function App() {
       avatarModel,
       pose,
       timestamp: Date.now(),
-      seed
+      seed,
+      isFavorite: false
     };
     setGeneratedImages((prev) => [newImage, ...prev]);
 
@@ -83,6 +96,13 @@ function App() {
 
   const handleDeleteImage = (id: string) => {
     setGeneratedImages((prev) => prev.filter(img => img.id !== id));
+  };
+
+  const handleToggleFavorite = (id: string) => {
+      setGeneratedImages((prev) => prev.map(img => 
+          img.id === id ? { ...img, isFavorite: !img.isFavorite } : img
+      ));
+      playSound('blip');
   };
 
   const handleRemix = (img: GeneratedImage) => {
@@ -97,7 +117,6 @@ function App() {
           aspectRatio: "16:9" 
       });
       setCurrentView('generator');
-      // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -110,12 +129,8 @@ function App() {
         {/* Deep Space Background */}
         <div className="fixed inset-0 z-0 pointer-events-none perspective-container">
             <div className="absolute inset-0 bg-[#020204] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0f1020] via-[#020204] to-[#020204]"></div>
-            
-            {/* Cleaned up ambient light for professional look */}
             <div className="absolute top-[-10%] left-[20%] w-[40vw] h-[40vw] bg-neon-blue/5 blur-[120px] rounded-full mix-blend-screen opacity-40"></div>
             <div className="absolute bottom-[-10%] right-[10%] w-[40vw] h-[40vw] bg-purple-900/10 blur-[120px] rounded-full mix-blend-screen opacity-40"></div>
-            
-            {/* Subtle grid floor */}
             <div className="grid-floor opacity-[0.07]"></div>
         </div>
 
@@ -128,21 +143,17 @@ function App() {
                 {currentView === 'generator' && (
                     <div className="px-6 pb-32 w-full max-w-[1600px] mx-auto animate-fade-in-up">
                          <div className="text-center mb-16 relative">
-                            {/* Refined Header */}
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
                                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                <span className="text-[10px] font-bold text-slate-300 tracking-[0.2em] uppercase">Engine V8.2 Active</span>
+                                <span className="text-[10px] font-bold text-slate-300 tracking-[0.2em] uppercase">Engine V8.5 Advanced</span>
                             </div>
                             
                             <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter uppercase drop-shadow-2xl">
                               Neural <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-white to-neon-blue bg-[length:200%_auto] animate-shine">Studio</span>
                             </h2>
-                            <p className="text-slate-400 max-w-xl mx-auto text-lg font-light leading-relaxed">
-                              Professional-grade render configuration.
-                            </p>
                         </div>
                         <ThumbnailGenerator onImageGenerated={handleImageGenerated} remixConfig={remixConfig} />
-                        <Gallery images={generatedImages.slice(0, 8)} onRemix={handleRemix} />
+                        <Gallery images={generatedImages.slice(0, 8)} onRemix={handleRemix} onToggleFavorite={handleToggleFavorite} />
                     </div>
                 )}
 
@@ -154,7 +165,6 @@ function App() {
                 {currentView === 'privacy' && <Privacy />}
             </main>
 
-            {/* Professional Footer */}
             <footer className="border-t border-white/5 bg-[#050508]/60 backdrop-blur-xl py-12 mt-auto relative z-20">
                 <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="flex items-center gap-4">
@@ -167,10 +177,6 @@ function App() {
                     <div className="flex gap-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                         <button onClick={() => setCurrentView('terms')} className="hover:text-white transition-colors">Terms of Service</button>
                         <button onClick={() => setCurrentView('privacy')} className="hover:text-white transition-colors">Privacy Policy</button>
-                        <button onClick={() => window.open('https://roblox.com', '_blank')} className="hover:text-white transition-colors">Roblox</button>
-                    </div>
-                    <div className="text-slate-700 text-[10px] font-mono uppercase tracking-wider">
-                        © 2024 BloxThumb Inc.
                     </div>
                 </div>
             </footer>
