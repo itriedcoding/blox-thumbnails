@@ -24,7 +24,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>" />
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -47,6 +47,7 @@
             },
             backgroundImage: {
               'cyber-grid': "linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px)",
+              'hologram': "linear-gradient(180deg, rgba(0, 243, 255, 0) 0%, rgba(0, 243, 255, 0.1) 50%, rgba(0, 243, 255, 0) 100%)",
             },
             animation: {
               'float': 'float 8s ease-in-out infinite',
@@ -55,7 +56,9 @@
               'reveal': 'reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
               'grid-move': 'gridMove 30s linear infinite',
               'glow': 'glow 3s ease-in-out infinite alternate',
-              'scanline': 'scanline 8s linear infinite',
+              'scanline': 'scanline 4s linear infinite',
+              'spin-slow': 'spin 12s linear infinite',
+              'shine': 'shine 3s linear infinite',
             },
             keyframes: {
               float: {
@@ -81,6 +84,10 @@
               scanline: {
                 '0%': { transform: 'translateY(-100%)' },
                 '100%': { transform: 'translateY(100%)' }
+              },
+              shine: {
+                '0%': { backgroundPosition: '200% center' },
+                '100%': { backgroundPosition: '-200% center' }
               }
             }
           }
@@ -99,10 +106,10 @@
       }
 
       ::-webkit-scrollbar {
-        width: 6px;
+        width: 4px;
       }
       ::-webkit-scrollbar-track {
-        background: #050505; 
+        background: #020205; 
       }
       ::-webkit-scrollbar-thumb {
         background: #334155; 
@@ -114,65 +121,62 @@
 
       /* Advanced Perspective Grid */
       .perspective-container {
-        perspective: 1000px;
+        perspective: 1200px;
         transform-style: preserve-3d;
       }
       
       .grid-floor {
         position: absolute;
-        width: 200%;
-        height: 200%;
-        left: -50%;
+        width: 300%;
+        height: 300%;
+        left: -100%;
         top: -50%;
         background-image: 
-          linear-gradient(to right, rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
-        background-size: 60px 60px;
-        transform: rotateX(60deg);
+          linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 80px 80px;
+        transform: rotateX(70deg);
         animation: gridMove 20s linear infinite;
         pointer-events: none;
-        mask-image: linear-gradient(to bottom, transparent, black 40%, black 80%, transparent);
+        mask-image: radial-gradient(circle at 50% 50%, black 0%, transparent 60%);
       }
 
-      /* Scanline Overlay */
+      /* Holographic Scanline Overlay */
       .scanlines {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.02) 50%, rgba(0,0,0,0.02));
         background-size: 100% 4px;
         pointer-events: none;
         z-index: 50;
-        opacity: 0.3;
+        opacity: 0.6;
       }
 
       .glass-panel {
-        background: rgba(10, 10, 15, 0.6);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        background: rgba(5, 5, 8, 0.7);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
       }
 
-      .glass-panel-hover:hover {
-        background: rgba(15, 15, 25, 0.8);
-        border-color: rgba(0, 243, 255, 0.2);
-        box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
-      }
-
-      /* Text Gradients */
-      .text-gradient-primary {
-        background: linear-gradient(135deg, #fff 0%, #00f3ff 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+      .text-glow {
+        text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
       }
       
-      .text-gradient-secondary {
-        background: linear-gradient(135deg, #bc13fe 0%, #00f3ff 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+      .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.1);
+          border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0,243,255,0.5);
       }
     </style>
   <script type="importmap">

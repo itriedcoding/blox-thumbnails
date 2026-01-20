@@ -7,37 +7,42 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ setView }) => {
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full relative">
+      
+      {/* Cinematic Background Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+         <div className="absolute top-[20%] left-[10%] w-[500px] h-[500px] bg-neon-blue/10 rounded-full blur-[150px] animate-pulse-slow"></div>
+         <div className="absolute bottom-[20%] right-[10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] animate-pulse-slow delay-1000"></div>
+         <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[800px] h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+      </div>
+
       {/* Hero Section */}
-      <section className="relative w-full min-h-[85vh] flex flex-col items-center justify-center px-6 overflow-hidden">
+      <section className="relative z-10 w-full min-h-[90vh] flex flex-col items-center justify-center px-6 overflow-hidden">
         
-        {/* Cinematic Background Blurs */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-neon-blue/5 rounded-full blur-[120px] animate-pulse-slow pointer-events-none"></div>
-        
-        <div className="relative z-10 flex flex-col items-center text-center animate-fade-in-up max-w-5xl mx-auto">
+        <div className="relative flex flex-col items-center text-center animate-fade-in-up max-w-6xl mx-auto perspective-container">
             
-            <div className="mb-8 flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl">
+            <div className="mb-10 flex items-center gap-4 px-6 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl hover:border-neon-blue/30 transition-colors cursor-default">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
                 </span>
-                <span className="text-slate-300 text-[10px] font-bold tracking-[0.2em] uppercase">Nano Banana Engine V8.2</span>
+                <span className="text-slate-300 text-[10px] font-bold tracking-[0.3em] uppercase font-mono">Neural Engine V8.2 Online</span>
             </div>
             
-            <h1 className="text-6xl md:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.85] drop-shadow-2xl">
-              CREATE <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40">ICONS</span>
+            <h1 className="text-[5rem] md:text-[8rem] lg:text-[10rem] font-black text-white mb-6 tracking-tighter leading-[0.8] drop-shadow-2xl mix-blend-screen select-none">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">UNLIMITED</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-b from-slate-200 to-slate-600 opacity-50 text-[0.8em]">ROBLOX GFX</span>
             </h1>
             
-            <p className="text-lg md:text-xl text-slate-400 max-w-xl mb-12 leading-relaxed font-light tracking-wide">
-              Generative 3D Thumbnails for Roblox. <br/>
-              <span className="text-white font-medium">No Blender. No Cinema4D. Just Text.</span>
+            <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mb-16 leading-relaxed font-light tracking-wide">
+              Generate cinema-grade 3D thumbnails instantly. <br/>
+              <span className="text-white font-medium">Text-to-Render. Auto-Avatar. Zero Blender.</span>
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+            <div className="flex flex-col sm:flex-row items-center gap-6 w-full justify-center">
                 <button 
                     onClick={() => setView('generator')}
-                    className="group relative px-12 py-5 bg-white text-black font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-105 overflow-hidden rounded-full shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)]"
+                    className="group relative px-16 py-6 bg-white text-black font-black text-sm uppercase tracking-[0.25em] transition-all hover:scale-105 hover:shadow-[0_0_80px_-20px_rgba(255,255,255,0.6)] overflow-hidden rounded-full"
                 >
                     <span className="relative z-10">Launch Studio</span>
                     <div className="absolute inset-0 bg-neon-blue opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"></div>
@@ -45,70 +50,33 @@ export const Home: React.FC<HomeProps> = ({ setView }) => {
                 
                 <button 
                     onClick={() => setView('dashboard')}
-                    className="px-12 py-5 bg-black/20 border border-white/10 text-white font-bold text-sm uppercase tracking-[0.2em] transition-all hover:bg-white/10 hover:border-white/30 rounded-full backdrop-blur-sm"
+                    className="px-16 py-6 bg-black/40 border border-white/10 text-white font-bold text-sm uppercase tracking-[0.25em] transition-all hover:bg-white/10 hover:border-white/40 rounded-full backdrop-blur-md"
                 >
-                    Gallery
+                    View Gallery
                 </button>
             </div>
         </div>
-
-        {/* Floating Abstract Elements */}
-        <div className="absolute bottom-10 left-10 hidden lg:block opacity-40">
-            <div className="text-[10px] font-mono text-slate-500 mb-2">COORD: 44.22.91</div>
-            <div className="h-px w-24 bg-white/20"></div>
-        </div>
       </section>
 
-      {/* Feature Strip */}
-      <section className="w-full border-y border-white/5 bg-black/40 backdrop-blur-sm py-16">
-          <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+      {/* Showcase Grid */}
+      <section className="w-full max-w-[1600px] mx-auto px-6 pb-40">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
-                  { t: "Photorealism", d: "Ray-traced lighting simulation" },
-                  { t: "Avatar Sync", d: "Load your Roblox skin instantly" },
-                  { t: "8K Resolution", d: "Cinema-grade output clarity" }
-              ].map((f, i) => (
-                  <div key={i} className="flex flex-col items-center text-center group">
-                      <div className="w-12 h-1 bg-white/10 mb-6 group-hover:bg-neon-blue transition-colors duration-500"></div>
-                      <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-tighter">{f.t}</h3>
-                      <p className="text-sm text-slate-500 font-mono uppercase tracking-widest">{f.d}</p>
+                  { title: "Auto-Avatar", desc: "AI Generates Characters from Text", color: "from-blue-500 to-cyan-500" },
+                  { title: "8K Raytracing", desc: "Simulated Cycles Rendering", color: "from-purple-500 to-pink-500" },
+                  { title: "Smart Prompt", desc: "Instant Scene Enhancement", color: "from-orange-500 to-red-500" }
+              ].map((item, i) => (
+                  <div key={i} className="group relative h-[300px] rounded-3xl bg-[#08080c] border border-white/5 overflow-hidden hover:border-white/20 transition-all duration-500">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
+                      <div className="absolute inset-0 p-10 flex flex-col justify-end">
+                          <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">{item.title}</h3>
+                          <p className="text-sm text-slate-500 font-mono uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75">{item.desc}</p>
+                      </div>
                   </div>
               ))}
           </div>
       </section>
 
-      {/* Visual Showcase */}
-      <section className="w-full max-w-[1400px] mx-auto px-6 py-40">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div>
-                  <span className="text-neon-blue font-mono text-xs tracking-widest uppercase mb-6 block">Legacy vs AI</span>
-                  <h2 className="text-5xl md:text-6xl font-black text-white mb-8 leading-[0.9] tracking-tighter">
-                      STOP USING <br/> <span className="text-slate-600">PLASTIC</span>
-                  </h2>
-                  <p className="text-lg text-slate-400 leading-relaxed mb-10 font-light">
-                      Standard renders look like toys. Our engine applies <strong className="text-white">subsurface scattering</strong>, 
-                      <strong className="text-white"> atmospheric fog</strong>, and <strong className="text-white">cinematic color grading</strong> 
-                      to make your game look like a triple-A title.
-                  </p>
-                  <button onClick={() => setView('generator')} className="text-white border-b border-neon-blue pb-1 text-sm font-bold uppercase tracking-widest hover:text-neon-blue transition-colors">
-                      Try the Engine &rarr;
-                  </button>
-              </div>
-              <div className="relative group perspective-container">
-                   <div className="absolute inset-0 bg-gradient-to-tr from-neon-blue/20 to-purple-600/20 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700 opacity-50"></div>
-                   <div className="relative bg-[#0a0a10] border border-white/10 rounded-3xl p-2 rotate-y-12 rotate-x-6 group-hover:rotate-0 transition-transform duration-700 shadow-2xl">
-                       <div className="aspect-video bg-black rounded-2xl overflow-hidden relative">
-                           {/* Abstract visual representing high quality render */}
-                           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614726365723-49cfae9e992a?q=80&w=1200')] bg-cover bg-center opacity-60"></div>
-                           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                           <div className="absolute bottom-8 left-8">
-                               <div className="inline-block px-3 py-1 bg-neon-blue/20 border border-neon-blue/50 text-neon-blue text-[10px] font-bold uppercase rounded mb-2">Rendered in 0.4s</div>
-                               <div className="text-2xl font-bold text-white tracking-tighter">NEON CITY OBBY</div>
-                           </div>
-                       </div>
-                   </div>
-              </div>
-          </div>
-      </section>
     </div>
   );
 };

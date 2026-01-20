@@ -162,6 +162,22 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     `;
   }
 
+  // Construct Instruction Logic
+  let avatarInstruction = "";
+  if (config.referenceImage) {
+      avatarInstruction = "Use the provided image as the MAIN ROBLOX AVATAR reference. Keep the outfit and colors accurate but upgrade the materials to PBR.";
+  } else {
+      // AUTO-GENERATION LOGIC
+      avatarInstruction = `
+      [AUTO-GENERATE AVATAR]
+      No reference image provided.
+      ACTION: Design a unique, detailed Roblox avatar that perfectly fits the [SCENE DESCRIPTION].
+      - If the prompt mentions a specific character type (e.g. 'Zombie', 'Knight', 'Business Man', 'Noob'), generate exactly that.
+      - If the prompt is generic, create a character that fits the environment (e.g. Space suit for space, camo for war).
+      - ENSURE the avatar has high-quality clothing textures and accessories.
+      `;
+  }
+
   const finalPrompt = `
     [TASK]
     Generate a Hyper-Realistic 8K 3D Render of a Roblox Scene (Blender Cycles / Unreal Engine 5).
@@ -179,6 +195,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     
     [AVATAR SPECIFICATIONS]
     ${avatarSpecs}
+    ${avatarInstruction}
     
     [SCENE DESCRIPTION]
     ${config.prompt}
@@ -202,7 +219,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
   if (config.referenceImage) {
     if (config.referenceImage.startsWith('http')) {
        parts.push({ text: `Reference Image URL (Main Character): ${config.referenceImage}` });
-       parts.push({ text: "Use this Roblox avatar as the main subject. Keep the outfit and colors accurate but upgrade the materials to PBR." });
+       parts.push({ text: avatarInstruction });
     } else {
         const matches = config.referenceImage.match(/^data:(.+);base64,(.+)$/);
         if (matches && matches.length === 3) {
@@ -212,7 +229,7 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
               data: matches[2],
             },
           });
-          parts.push({ text: "Use this image as the MAIN ROBLOX AVATAR reference. Keep the outfit/accessories but render them with high realism." });
+          parts.push({ text: avatarInstruction });
         }
     }
   }

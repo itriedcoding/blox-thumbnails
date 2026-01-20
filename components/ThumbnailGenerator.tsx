@@ -18,51 +18,16 @@ const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
     { label: "Epic Sword Fight", category: "Anime", style: "anime", prompt: "Two Roblox avatars clashing swords in mid-air, magical energy auras, floating rocks, dynamic action camera angle, intense anime effects" },
     { label: "Bedwars Victory", category: "PVP", style: "cinematic", prompt: "Roblox avatar standing victoriously on a bedwars island holding a diamond sword, destroying a bed, explosion in background, victory particles" },
     { label: "Jailbreak Heist", category: "Action", style: "cinematic", prompt: "Roblox avatar in prisoner outfit running from a police helicopter with a bag of money, spotlights, rain, wet streets, reflection, gta style loading screen" },
-    { label: "Adopt Me Trade", category: "Simulator", style: "simulator", prompt: "Two Roblox avatars trading legendary neon pets, trade menu overlay style, sparkles, happy faces, pastel color palette, cute aesthetic" },
-    { label: "Blox Fruits Awakening", category: "Anime", style: "anime", prompt: "Roblox avatar transforming with a devil fruit power, massive dragon aura, lightning bolts, ocean background, one piece style graphics" },
-    { label: "Doors Entity", category: "Horror", style: "horror", prompt: "Roblox avatar hiding in a closet from the Rush entity, distorted vision, red lighting, static noise effect, scary atmosphere" },
-    { label: "Fashion Show", category: "Roleplay", style: "cinematic", prompt: "Roblox avatar walking down a fashion runway wearing a detailed designer dress, paparazzi camera flashes, spotlight, glamorous atmosphere" },
-    { label: "Speed Run World Record", category: "Obby", style: "obby", prompt: "Roblox avatar blurring past obstacles at supersonic speed, timer hud elements, motion lines, wide angle lens, dynamic perspective" },
-    { label: "Zombie Survival", category: "Shooter", style: "rpg", prompt: "Roblox avatar holding a shotgun defending a barricade against a horde of zombies, muzzle flash, empty shells flying, apocalypse city background" },
-    { label: "Deep Space Mining", category: "Sci-Fi", style: "cinematic", prompt: "Roblox avatar in a futuristic spacesuit mining a glowing crystal on an asteroid, galaxy nebula background, zero gravity floating debris" },
-    { label: "Medieval Castle Siege", category: "RPG", style: "rpg", prompt: "Roblox avatar knight leading an army towards a massive castle, catapults firing, fire arrows, epic war atmosphere, volumetric fog" },
-    { label: "Youtuber Reacts", category: "High CTR", style: "high-ctr", prompt: "Close up of Roblox avatar face making a shocked expression with mouth open, red arrow pointing to a mystery box, vibrant yellow background" },
-    { label: "Pet Simulator X Huge", category: "Simulator", style: "simulator", prompt: "Roblox avatar surrounded by dozens of huge cat pets, coins everywhere, chest opening, confetti, dopamine rush visual" },
     { label: "Murder Mystery 2", category: "Horror", style: "horror", prompt: "Roblox avatar holding a knife behind their back while talking to another innocent avatar, dark mansion lobby, suspenseful lighting" },
-    { label: "Natural Disaster", category: "Survival", style: "cinematic", prompt: "Roblox avatar running from a massive tsunami wave destroying a tower, chaotic physics, debris, splashing water, panic" },
-    { label: "Arsenal Killstreak", category: "Shooter", style: "high-ctr", prompt: "Roblox avatar performing a trickshot with a sniper rifle, kill feed overlay style, golden gun, lens flare, saturated colors" },
-    { label: "Brookhaven Roleplay", category: "Roleplay", style: "simulator", prompt: "Roblox family standing in front of a suburban house, happy expressions, bright sunny day, trees, peaceful neighborhood vibe" },
-    { label: "Tower of Hell Fall", category: "Obby", style: "obby", prompt: "Roblox avatar falling from the top of a colorful tower, looking down at the ground far below, motion blur, dizzying perspective" },
-    { label: "Piggy Jumpscare", category: "Horror", style: "horror", prompt: "Piggy character swinging a bat at the camera, extreme close up, distorted lens, glitch effect, ominous red fog" },
-    { label: "Vehicle Simulator Drift", category: "Racing", style: "cinematic", prompt: "Roblox avatar drifting a customized jdm car around a corner, smoke from tires, sparks, city night lights, motion blur background" },
-    { label: "Anime Gacha Pull", category: "Anime", style: "anime", prompt: "Roblox avatar summoning a 5-star character, golden light pillar, magical circles, tarot cards flying, ethereal glow" }
 ];
 
 const POSES = [
     { id: 'standing', label: 'Idle / Standing', icon: '🧍' },
-    { id: 'crossed_arms', label: 'Crossed Arms', icon: '🙅' },
-    { id: 'hands_hips', label: 'Hands on Hips', icon: '🙆' },
-    { id: 'walking', label: 'Walking', icon: '🚶' },
+    { id: 'fighting_stance', label: 'Combat Stance', icon: '🥊' },
     { id: 'running', label: 'Sprinting', icon: '🏃' },
     { id: 'jumping', label: 'Jumping', icon: '⏫' },
-    { id: 'hero_landing', label: 'Hero Landing', icon: '🦸' },
-    { id: 'fighting_stance', label: 'Combat Stance', icon: '🥊' },
-    { id: 'sword_slash', label: 'Sword Slash', icon: '⚔️' },
-    { id: 'aiming_gun', label: 'Aiming (FPS)', icon: '🔫' },
-    { id: 'spell_casting', label: 'Magic Cast', icon: '✨' },
-    { id: 'punching', label: 'Punching', icon: '👊' },
-    { id: 'falling', label: 'Falling / Skydiving', icon: '📉' },
-    { id: 'levitating', label: 'Levitating', icon: '🧘' },
-    { id: 'climbing', label: 'Climbing', icon: '🧗' },
-    { id: 'swimming', label: 'Swimming', icon: '🏊' },
+    { id: 'scared', label: 'Scared', icon: '😱' },
     { id: 'driving', label: 'Driving', icon: '🚗' },
-    { id: 'zombie', label: 'Zombie Walk', icon: '🧟' },
-    { id: 'cheering', label: 'Victory / Cheer', icon: '🏆' },
-    { id: 'kneeling', label: 'Kneeling / Defeat', icon: '🙇' },
-    { id: 'scared', label: 'Scared / Cowering', icon: '😱' },
-    { id: 'pointing', label: 'Pointing Camera', icon: '🫵' },
-    { id: 'peace_sign', label: 'Peace Sign', icon: '✌️' },
-    { id: 'face_closeup', label: 'Face Close-up', icon: '👁️' },
 ];
 
 const LIGHTING_PRESETS = [
@@ -70,28 +35,20 @@ const LIGHTING_PRESETS = [
     { id: 'golden hour, warm sun, god rays', label: '☀️ Golden Hour' },
     { id: 'neon cyberpunk lights, blue and pink rim lighting', label: '🏙️ Neon City' },
     { id: 'dark horror atmosphere, spotlight, volumetrics', label: '👻 Horror Dark' },
-    { id: 'bright studio lighting, soft shadows, ambient occlusion', label: '💡 Clean Studio' },
 ];
 
 const CAMERA_PRESETS = [
     { id: '', label: 'Default' },
     { id: 'wide angle, fisheye lens, dynamic perspective', label: '📷 Wide / Fisheye' },
     { id: 'telephoto lens, compressed background, cinematic bokeh', label: '🔭 Telephoto' },
-    { id: 'top-down isometric view', label: '📐 Isometric' },
     { id: 'low angle hero shot looking up', label: '⬆️ Low Angle' },
-];
-
-const NEGATIVE_PRESETS_OPTIONS = [
-    { id: 'clean', label: 'Standard Clean', val: "lego, plastic, studs, toy, blocky, low poly, jagged edges, pixelated, blur, noise, watermark, text, logo, ugly, bad anatomy, deformed limbs" },
-    { id: 'cinematic', label: 'Film / Cinematic', val: "cartoon, cel shaded, flat, 2d, sketch, drawing, bright colors, saturated, low poly, plastic skin, doll, toy" },
-    { id: 'horror', label: 'Dark / Horror', val: "bright, happy, sunlight, cute, saturated, colorful, cartoon, funny, toy, plastic" },
 ];
 
 const CORS_PROXY = "https://corsproxy.io/?";
 
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, remixConfig }) => {
   const [prompt, setPrompt] = useState('');
-  const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS_OPTIONS[0].val);
+  const [negativePrompt, setNegativePrompt] = useState('low quality, blurry, watermark, text, bad anatomy, deformed, plastic, toy');
   
   // Image Inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,7 +66,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [batchSize, setBatchSize] = useState<number>(1);
   const [showLibrary, setShowLibrary] = useState(false);
   
-  const [inputMethod, setInputMethod] = useState<'upload' | 'url' | 'roblox'>('roblox');
+  // Layout State
+  const [activeTab, setActiveTab] = useState<'prompt' | 'avatar'>('prompt');
+  
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
@@ -118,7 +77,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [lighting, setLighting] = useState('');
   const [camera, setCamera] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [promptHistory, setPromptHistory] = useState<string[]>([]);
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0); 
@@ -184,10 +142,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       if (len < 100) return 70;
       return 100;
   };
-  
-  const getTokenCost = () => {
-      return model === 'pro' ? 25 + Math.floor(prompt.length / 10) : 1 + Math.floor(prompt.length / 50);
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -203,28 +157,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         setError(null);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleUrlLoad = async () => {
-    if (!imageUrl.trim()) return;
-    setIsLoadingUrl(true);
-    setError(null);
-    try {
-        const response = await fetch(`${CORS_PROXY}${imageUrl}`);
-        if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
-        const blob = await response.blob();
-        if (!blob.type.startsWith('image/')) throw new Error("URL is not a valid image");
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setReferenceImage(reader.result as string);
-            setAvatarData(null);
-            setIsLoadingUrl(false);
-        };
-        reader.readAsDataURL(blob);
-    } catch (err: any) {
-        setError(`Could not load image: ${err.message}.`);
-        setIsLoadingUrl(false);
     }
   };
 
@@ -279,8 +211,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     setError(null);
     setEditorImage(null);
     
-    setPromptHistory(prev => [prompt, ...prev].slice(0, 5));
-
     const fullPrompt = `${prompt} ${lighting} ${camera}`.trim();
 
     try {
@@ -327,50 +257,54 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
     <div className="w-full relative">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             
-            {/* Main Console Left */}
-            <div className="xl:col-span-8 bg-[#0a0a10]/60 backdrop-blur-2xl border border-white/5 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-blue/20 to-transparent"></div>
+            {/* LEFT PANEL: MAIN CONTROLS */}
+            <div className="xl:col-span-8 bg-[#08080c]/80 backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-blue/40 via-purple-500/40 to-transparent"></div>
                 
                 {/* Header Actions */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                     <div>
-                         <label className="text-[10px] text-neon-blue font-mono uppercase tracking-[0.2em] mb-2 block">Input Parameters</label>
-                         <h3 className="text-2xl font-bold text-white uppercase tracking-tighter">Render Configuration</h3>
+                         <div className="flex items-center gap-2 mb-2">
+                             <div className="w-1.5 h-1.5 bg-neon-green rounded-full animate-pulse"></div>
+                             <label className="text-[10px] text-neon-blue font-mono uppercase tracking-[0.25em]">System Ready</label>
+                         </div>
+                         <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Command Center</h3>
                     </div>
                     <div className="flex items-center gap-3">
-                         <button onClick={() => setShowLibrary(true)} className="px-4 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-lg text-xs hover:bg-purple-500 hover:text-white flex items-center gap-2 transition-all font-bold tracking-wider" title="Prompt Library">
-                             📚 Library
+                        <button onClick={handleRandomize} disabled={isRolling} className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs hover:bg-white/10 flex items-center gap-2 transition-all font-bold uppercase tracking-wider text-slate-300 hover:text-white hover:border-white/30" title="AI Random Prompt">
+                             {isRolling ? 'Generating...' : '🎲 Randomize'}
                         </button>
-                        <button onClick={handleRandomize} disabled={isRolling} className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs hover:bg-white/10 flex items-center gap-2" title="AI Random Prompt">
-                             {isRolling ? <div className="w-4 h-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div> : '🎲 AI Roll'}
-                        </button>
-                        <div className="bg-black/50 p-1 rounded-lg border border-white/10 flex">
-                            <button onClick={() => setModel('flash')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase transition-all ${model === 'flash' ? 'bg-white text-black shadow-md' : 'text-slate-500 hover:text-white'}`}>Fast</button>
-                            <button onClick={() => setModel('pro')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1 ${model === 'pro' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>Pro <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span></button>
+                        <div className="bg-black/50 p-1.5 rounded-xl border border-white/10 flex">
+                            <button onClick={() => setModel('flash')} className={`px-5 py-2 rounded-lg text-[10px] font-bold uppercase transition-all tracking-wide ${model === 'flash' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>Flash</button>
+                            <button onClick={() => setModel('pro')} className={`px-5 py-2 rounded-lg text-[10px] font-bold uppercase transition-all tracking-wide flex items-center gap-2 ${model === 'pro' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>Pro <span className="w-1 h-1 rounded-full bg-white animate-ping"></span></button>
                         </div>
                     </div>
                 </div>
 
                 {/* Prompt Area */}
                 <div className="relative mb-8 group/prompt">
-                    <div className="relative bg-black rounded-2xl p-1">
+                    <div className="relative bg-[#020204] rounded-2xl p-1.5 ring-1 ring-white/10 focus-within:ring-neon-blue/50 transition-all shadow-inner">
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder="Describe your scene here... (e.g. 'Cyberpunk samurai in neon rain')"
-                            className="w-full h-40 bg-[#050508] rounded-xl p-6 text-lg text-white placeholder-slate-600 outline-none resize-none font-light tracking-wide leading-relaxed"
+                            className="w-full h-48 bg-[#050508] rounded-xl p-8 text-xl text-white placeholder-slate-700 outline-none resize-none font-light tracking-wide leading-relaxed"
                         />
-                        <div className="flex justify-between items-center px-4 py-3 bg-[#050508] border-t border-white/5 rounded-b-xl">
-                            <div className="flex items-center gap-4">
-                                <span className="text-[10px] text-slate-500 font-mono">{prompt.length} CHARS</span>
-                                <div className="w-24 h-1 bg-slate-800 rounded-full overflow-hidden">
-                                    <div className="h-full bg-neon-blue transition-all duration-500" style={{ width: `${getPromptStrength()}%` }}></div>
+                        <div className="flex justify-between items-center px-6 py-4 bg-[#050508] border-t border-white/5 rounded-b-xl">
+                            <div className="flex items-center gap-6">
+                                <button onClick={() => setShowLibrary(true)} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-white transition-colors">
+                                    <span>📚 Templates</span>
+                                </button>
+                                <div className="h-4 w-px bg-white/10"></div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-[10px] text-slate-600 font-mono">STRENGTH</span>
+                                    <div className="w-20 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-gradient-to-r from-neon-blue to-purple-500 transition-all duration-500" style={{ width: `${getPromptStrength()}%` }}></div>
+                                    </div>
                                 </div>
-                                <span className="text-[10px] text-slate-600 font-mono">EST. COST: {getTokenCost()} BP</span>
                             </div>
-                            <button onClick={handleEnhancePrompt} disabled={isEnhancing || !prompt} className="flex items-center gap-2 text-[10px] text-neon-blue uppercase font-bold tracking-wider hover:text-white transition-colors disabled:opacity-50">
-                                {isEnhancing ? 'Optimizing...' : 'AI Enhance'}
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            <button onClick={handleEnhancePrompt} disabled={isEnhancing || !prompt} className="group flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-blue/5 border border-neon-blue/20 text-[10px] text-neon-blue uppercase font-bold tracking-wider hover:bg-neon-blue/10 hover:border-neon-blue/50 transition-all disabled:opacity-50">
+                                {isEnhancing ? 'Optimizing...' : '✨ Magic Enhance'}
                             </button>
                         </div>
                     </div>
@@ -379,47 +313,47 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 {/* Controls Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 block">Visual Style</label>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Visual Style</label>
                         <div className="flex flex-wrap gap-2">
                             {['cinematic', 'simulator', 'horror', 'anime', 'high-ctr', 'rpg'].map((s) => (
-                                <button key={s} onClick={() => setStyle(s as any)} className={`px-4 py-2 rounded-lg text-[10px] uppercase font-bold tracking-wider border transition-all ${style === s ? 'bg-neon-blue/10 border-neon-blue text-neon-blue' : 'bg-transparent border-white/10 text-slate-500'}`}>{s}</button>
+                                <button key={s} onClick={() => setStyle(s as any)} className={`px-4 py-2.5 rounded-lg text-[10px] uppercase font-bold tracking-wider border transition-all ${style === s ? 'bg-white text-black border-white' : 'bg-transparent border-white/10 text-slate-500 hover:border-white/30'}`}>{s}</button>
                             ))}
                         </div>
                     </div>
                     <div>
-                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 block">Aspect Ratio</label>
-                         <div className="flex gap-2">
+                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Aspect Ratio</label>
+                         <div className="flex gap-3 bg-black/30 p-1.5 rounded-xl border border-white/5">
                             {[{v:"16:9", l:"Landscape"}, {v:"1:1", l:"Square"}, {v:"9:16", l:"Portrait"}].map(r => (
-                                <button key={r.v} onClick={() => setAspectRatio(r.v as any)} className={`flex-1 py-3 rounded-lg border text-[10px] uppercase font-bold transition-all ${aspectRatio === r.v ? 'bg-white text-black border-white' : 'bg-transparent border-white/10 text-slate-500'}`}>{r.l}</button>
+                                <button key={r.v} onClick={() => setAspectRatio(r.v as any)} className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${aspectRatio === r.v ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}>{r.l}</button>
                             ))}
                          </div>
                     </div>
                     
                     {/* Lighting & Camera */}
                     <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 block">Lighting Setup</label>
-                        <select value={lighting} onChange={(e) => setLighting(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-3 block">Lighting</label>
+                        <select value={lighting} onChange={(e) => setLighting(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-white/30 transition-colors">
                             {LIGHTING_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 block">Camera Lens</label>
-                        <select value={camera} onChange={(e) => setCamera(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none">
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-3 block">Camera</label>
+                        <select value={camera} onChange={(e) => setCamera(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-white/30 transition-colors">
                             {CAMERA_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                         </select>
                     </div>
 
                     {/* POSE SELECTOR */}
                     <div className="md:col-span-2">
-                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3 flex justify-between items-center">
-                            <span>Character Pose</span>
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 flex justify-between items-center">
+                            <span>Character Action</span>
                             <span className="text-neon-blue">{POSES.find(p => p.id === pose)?.label}</span>
                         </label>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar p-1 bg-black/20 rounded-xl border border-white/5">
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                             {POSES.map((p) => (
-                                <button key={p.id} onClick={() => setPose(p.id)} className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${pose === p.id ? 'bg-white/10 border-neon-blue/50 text-white' : 'bg-transparent border-white/5 text-slate-500'}`}>
-                                    <span className="text-xl mb-1">{p.icon}</span>
-                                    <span className="text-[8px] font-bold uppercase tracking-wide">{p.label}</span>
+                                <button key={p.id} onClick={() => setPose(p.id)} className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:scale-105 ${pose === p.id ? 'bg-gradient-to-b from-white/10 to-white/5 border-neon-blue/50 text-white shadow-[0_0_15px_-5px_rgba(0,243,255,0.3)]' : 'bg-black/30 border-white/5 text-slate-600 hover:text-slate-300'}`}>
+                                    <span className="text-2xl mb-2 filter drop-shadow-lg">{p.icon}</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider">{p.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -432,7 +366,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         {showAdvanced ? '[-] Hide Advanced Settings' : '[+] Show Advanced Settings'}
                     </button>
                     {showAdvanced && (
-                        <div className="mt-6 grid grid-cols-2 gap-6 animate-fade-in-up bg-black/30 p-6 rounded-xl border border-white/5">
+                        <div className="mt-6 grid grid-cols-2 gap-6 animate-fade-in-up bg-black/30 p-6 rounded-2xl border border-white/5">
                             <div>
                                 <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2 block">Seed</label>
                                 <input type="number" value={seed} onChange={(e) => setSeed(parseInt(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-xs text-white font-mono outline-none" />
@@ -445,102 +379,78 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                                     ))}
                                 </div>
                             </div>
-                            <div className="col-span-2">
-                                <label className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-2 block">Negative Prompt Preset</label>
-                                <select onChange={(e) => setNegativePrompt(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none mb-2">
-                                    {NEGATIVE_PRESETS_OPTIONS.map(p => <option key={p.id} value={p.val}>{p.label}</option>)}
-                                </select>
-                                <input type="text" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-xs text-white focus:border-red-500/50 outline-none" />
-                            </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Side Panel Right */}
+            {/* RIGHT PANEL: CHARACTER SOURCE */}
             <div className="xl:col-span-4 flex flex-col gap-6">
-                <div className="bg-[#0a0a10]/60 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 shadow-xl flex-1 flex flex-col">
-                    <div className="flex bg-black/50 rounded-xl p-1 mb-6">
-                        {['roblox', 'upload', 'url'].map(m => (
-                            <button key={m} onClick={() => setInputMethod(m as any)} className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${inputMethod === m ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>{m}</button>
-                        ))}
+                <div className="bg-[#08080c]/80 backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 shadow-xl flex-1 flex flex-col">
+                    <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-6 block">Character Source</label>
+                    
+                    {/* Tab Switcher */}
+                    <div className="flex bg-black/40 rounded-xl p-1.5 mb-8 border border-white/5">
+                        <button onClick={() => { setActiveTab('prompt'); setReferenceImage(null); setAvatarData(null); }} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'prompt' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>AI Auto-Gen</button>
+                        <button onClick={() => setActiveTab('avatar')} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'avatar' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>Roblox User</button>
                     </div>
 
-                    <div className="flex-1 flex flex-col items-center justify-start relative bg-black/30 rounded-2xl border border-white/5 overflow-hidden min-h-[400px]">
+                    <div className="flex-1 flex flex-col items-center justify-start relative rounded-2xl overflow-hidden min-h-[300px]">
                         
-                        {/* ROBLOX INPUT METHOD */}
-                        {inputMethod === 'roblox' && (
-                             <div className="w-full p-4 space-y-4 overflow-y-auto">
-                                <div className="text-center mb-6 pt-4">
-                                    <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl border border-white/5 shadow-lg shadow-white/5">👥</div>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi-Avatar Sync</p>
-                                </div>
-                                
-                                <div className="flex gap-2 mb-4 bg-black/40 p-1 rounded-lg">
-                                    {['R6', 'R15', 'Rthro'].map(m => (
-                                        <button key={m} onClick={() => setAvatarModel(m as any)} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-md transition-all ${avatarModel === m ? 'bg-neon-blue text-black' : 'text-slate-500 hover:text-white'}`}>{m}</button>
-                                    ))}
-                                </div>
-
-                                {/* PLAYER 1 */}
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-2 block flex justify-between">
-                                        <span>Player 1 (Main)</span>
-                                        {avatarData && <span className="text-neon-green">Ready</span>}
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar1()} />
-                                        <button onClick={handleFetchRobloxAvatar1} disabled={isFetchingAvatar1} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors min-w-[50px]">{isFetchingAvatar1 ? '...' : 'GET'}</button>
-                                    </div>
-                                    {avatarData && (
-                                        <div className="mt-3 relative h-32 w-full bg-black/50 rounded-lg overflow-hidden border border-white/10 group shadow-inner">
-                                            <img src={avatarData.imageUrl} alt="P1" className="w-full h-full object-contain" />
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                                                 <button onClick={() => { setAvatarData(null); setReferenceImage(null); }} className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/50 rounded-lg text-xs font-bold uppercase hover:bg-red-500 hover:text-white transition-all">Remove</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                {/* PLAYER 2 */}
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-2 block flex justify-between">
-                                        <span>Player 2 (Optional)</span>
-                                        {secondAvatarData && <span className="text-neon-green">Ready</span>}
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <input type="text" value={robloxUsername2} onChange={(e) => setRobloxUsername2(e.target.value)} placeholder="Username" className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar2()} />
-                                        <button onClick={handleFetchRobloxAvatar2} disabled={isFetchingAvatar2} className="px-3 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors min-w-[50px]">{isFetchingAvatar2 ? '...' : 'GET'}</button>
-                                    </div>
-                                    {secondAvatarData && (
-                                        <div className="mt-3 relative h-32 w-full bg-black/50 rounded-lg overflow-hidden border border-white/10 group shadow-inner">
-                                            <img src={secondAvatarData.imageUrl} alt="P2" className="w-full h-full object-contain" />
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                                                 <button onClick={() => { setSecondAvatarData(null); setSecondReferenceImage(null); }} className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/50 rounded-lg text-xs font-bold uppercase hover:bg-red-500 hover:text-white transition-all">Remove</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                        {/* MODE: AI AUTO GEN */}
+                        {activeTab === 'prompt' && (
+                             <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center animate-fade-in-up">
+                                 <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-neon-blue/20 to-purple-500/20 flex items-center justify-center mb-6 animate-pulse-slow">
+                                     <span className="text-4xl">✨</span>
+                                 </div>
+                                 <h4 className="text-white font-bold uppercase tracking-wider mb-2">AI Character Designer</h4>
+                                 <p className="text-slate-500 text-xs leading-relaxed max-w-[250px]">
+                                     The engine will automatically design a unique Roblox avatar based on your prompt description.
+                                 </p>
+                                 <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/5 w-full text-left">
+                                     <div className="text-[10px] text-neon-blue font-bold uppercase tracking-widest mb-2">Tip</div>
+                                     <p className="text-[10px] text-slate-400">Describe clothing, accessories, or colors in your prompt for best results. E.g. <span className="text-slate-300">"A noob wearing a golden crown"</span></p>
+                                 </div>
                              </div>
                         )}
 
-                        {inputMethod === 'upload' && (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                                <button onClick={() => fileInputRef.current?.click()} className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10 hover:bg-white/10 transition-all">
-                                    <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                </button>
-                                <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">Upload Reference PNG</p>
-                                {referenceImage && <p className="text-neon-green text-xs mt-2">Image Loaded</p>}
-                            </div>
-                        )}
+                        {/* MODE: ROBLOX USER */}
+                        {activeTab === 'avatar' && (
+                             <div className="w-full space-y-4 animate-fade-in-up">
+                                <div className="flex gap-2 mb-4 bg-black/40 p-1.5 rounded-xl border border-white/5">
+                                    {['R6', 'R15', 'Rthro'].map(m => (
+                                        <button key={m} onClick={() => setAvatarModel(m as any)} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${avatarModel === m ? 'bg-neon-blue text-black' : 'text-slate-500 hover:text-white'}`}>{m}</button>
+                                    ))}
+                                </div>
 
-                        {inputMethod === 'url' && (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-6">
-                                <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-white text-xs outline-none mb-3" />
-                                <button onClick={handleUrlLoad} disabled={isLoadingUrl} className="w-full py-3 bg-white/10 rounded-lg text-xs font-bold uppercase hover:bg-white hover:text-black transition-colors">{isLoadingUrl ? 'Loading...' : 'Load Image'}</button>
-                                {referenceImage && <p className="text-neon-green text-xs mt-4">Image Loaded</p>}
-                            </div>
+                                <div className="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                                    <label className="text-[10px] text-slate-500 font-bold uppercase mb-3 block flex justify-between">
+                                        <span>Primary Avatar</span>
+                                        {avatarData && <span className="text-neon-green">Synced</span>}
+                                    </label>
+                                    <div className="flex gap-2 mb-3">
+                                        <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username..." className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar1()} />
+                                        <button onClick={handleFetchRobloxAvatar1} disabled={isFetchingAvatar1} className="px-4 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors min-w-[60px]">{isFetchingAvatar1 ? '...' : 'GET'}</button>
+                                    </div>
+                                    {avatarData ? (
+                                        <div className="relative h-40 w-full bg-black/50 rounded-xl overflow-hidden border border-white/10 group">
+                                            <img src={avatarData.imageUrl} alt="P1" className="w-full h-full object-contain p-2" />
+                                            <button onClick={() => { setAvatarData(null); setReferenceImage(null); }} className="absolute top-2 right-2 p-2 bg-red-500/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                                        </div>
+                                    ) : (
+                                        <div className="h-40 w-full bg-black/20 rounded-xl border border-white/5 border-dashed flex items-center justify-center text-slate-600 text-xs uppercase font-bold tracking-widest">
+                                            No Avatar Loaded
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="text-center pt-2">
+                                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                                     <button onClick={() => fileInputRef.current?.click()} className="text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-wider underline decoration-slate-700 underline-offset-4">
+                                         Or Upload Custom .PNG
+                                     </button>
+                                </div>
+                             </div>
                         )}
                     </div>
                 </div>
@@ -548,9 +458,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 <button 
                     onClick={handleGenerate} 
                     disabled={isGenerating} 
-                    className={`w-full py-8 rounded-3xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl transition-all relative overflow-hidden group ${isGenerating ? 'bg-[#0a0a10] cursor-not-allowed border border-white/5' : 'bg-white text-black hover:scale-[1.02] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.4)]'}`}
+                    className={`w-full py-8 rounded-[2rem] font-black text-2xl uppercase tracking-[0.25em] shadow-2xl transition-all relative overflow-hidden group ${isGenerating ? 'bg-[#0a0a10] cursor-not-allowed border border-white/5' : 'bg-white text-black hover:scale-[1.02] hover:shadow-[0_0_80px_-20px_rgba(255,255,255,0.5)]'}`}
                 >
-                    <span className="relative z-10 flex items-center justify-center gap-3">
+                    <span className="relative z-10 flex items-center justify-center gap-4">
                         {isGenerating ? `Processing ${Math.round(progress)}%` : 'INITIALIZE RENDER'}
                     </span>
                     {isGenerating && (
@@ -558,11 +468,11 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     )}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-shine z-0"></div>
                 </button>
-                <div className="text-center text-[10px] text-slate-500 font-mono">Shortcut: CTRL + ENTER</div>
+                <div className="text-center text-[10px] text-slate-600 font-mono tracking-widest uppercase">CTRL + ENTER to Generate</div>
                 
                 {error && (
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-fade-in-up">
-                        <p className="text-red-400 text-xs font-bold uppercase tracking-wide text-center mb-2">{error}</p>
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-fade-in-up backdrop-blur-md">
+                        <p className="text-red-400 text-xs font-bold uppercase tracking-wide text-center">{error}</p>
                     </div>
                 )}
             </div>
@@ -571,10 +481,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         {/* PROMPT LIBRARY MODAL */}
         {showLibrary && (
             <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-fade-in-up">
-                <div className="w-full max-w-4xl bg-[#0a0a10] border border-white/10 rounded-3xl p-8 max-h-[90vh] overflow-hidden flex flex-col relative">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter">High CTR Template Library</h2>
-                        <button onClick={() => setShowLibrary(false)} className="text-slate-500 hover:text-white text-xs uppercase font-bold tracking-widest">Close [ESC]</button>
+                <div className="w-full max-w-5xl bg-[#0a0a10] border border-white/10 rounded-[2rem] p-10 max-h-[85vh] overflow-hidden flex flex-col relative shadow-2xl">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                             <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">High-CTR Library</h2>
+                             <p className="text-slate-500 text-xs uppercase tracking-widest">Viral Concepts & Templates</p>
+                        </div>
+                        <button onClick={() => setShowLibrary(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/20 transition-all">✕</button>
                     </div>
                     
                     <div className="overflow-y-auto custom-scrollbar flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-2">
@@ -582,14 +495,14 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                             <button 
                                 key={idx} 
                                 onClick={() => handleApplyTemplate(t)}
-                                className="text-left p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-neon-blue/50 transition-all group"
+                                className="text-left p-6 rounded-2xl border border-white/5 bg-[#0f0f15] hover:bg-[#1a1a20] hover:border-neon-blue/30 hover:scale-[1.01] transition-all group flex flex-col h-full"
                             >
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="text-[10px] font-bold text-neon-blue uppercase tracking-widest bg-neon-blue/10 px-2 py-1 rounded">{t.category}</span>
-                                    <span className="text-[10px] text-slate-500 font-mono">{t.style}</span>
+                                <div className="flex justify-between items-start mb-3">
+                                    <span className="text-[9px] font-black text-black bg-white px-2 py-1 rounded uppercase tracking-wider">{t.category}</span>
+                                    <span className="text-[9px] text-slate-500 font-mono border border-white/10 px-2 py-1 rounded">{t.style}</span>
                                 </div>
-                                <h3 className="text-sm font-bold text-white mb-2 group-hover:text-neon-blue transition-colors">{t.label}</h3>
-                                <p className="text-[10px] text-slate-400 line-clamp-3 leading-relaxed opacity-70 group-hover:opacity-100">{t.prompt}</p>
+                                <h3 className="text-lg font-bold text-white mb-3 group-hover:text-neon-blue transition-colors leading-tight">{t.label}</h3>
+                                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed opacity-70 group-hover:opacity-100 mt-auto font-light">{t.prompt}</p>
                             </button>
                         ))}
                     </div>
@@ -599,7 +512,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
         
         {/* Editor Overlay */}
         {editorImage && (
-            <div className="mt-8 border-t border-white/10 pt-8 animate-fade-in-up">
+            <div className="mt-12 border-t border-white/5 pt-12 animate-fade-in-up">
                 <ImageEditor initialImage={editorImage} onClose={() => setEditorImage(null)} onSave={(finalData) => { const link = document.createElement('a'); link.download = `bloxthumb-${Date.now()}.png`; link.href = finalData; link.click(); }} />
             </div>
         )}
