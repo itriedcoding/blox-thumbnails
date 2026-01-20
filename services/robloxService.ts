@@ -1,4 +1,4 @@
-import { RobloxAvatar, AvatarModel } from "../types";
+import { RobloxAvatar, AvatarModel, RobloxGame } from "../types";
 
 // We use a CORS proxy because Roblox APIs do not allow direct browser calls from unauthorized domains.
 // This ensures "No Fake" functionality by hitting the real API.
@@ -71,3 +71,51 @@ export const getRobloxAvatar = async (username: string, model: AvatarModel): Pro
     throw error;
   }
 };
+
+export const getTopGames = async (limit: number = 100): Promise<RobloxGame[]> => {
+    try {
+        // 1. Fetch Top Games List (SortOrder 1 = Popular/Most Engaging)
+        const listUrl = `https://games.roblox.com/v1/games/list?sortOrder=1&limit=${limit}`;
+        const listResponse = await fetch(`${CORS_PROXY}${listUrl}`);
+        
+        if (!listResponse.ok) throw new Error("Failed to fetch games list");
+        
+        const listData = await listResponse.json();
+        
+        if (!listData.games || listData.games.length === 0) return [];
+
+        const games: any[] = listData.games;
+        const universeIds = games.map(g => g.id).join(',');
+
+        // 2. Fetch Thumbnails for these games (Batch request)
+        const thumbUrl = `https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeIds}&size=512x512&format=Png&isCircular=false`;
+        const thumbResponse = await fetch(`${CORS_PROXY}${thumbUrl}`);
+        const thumbData = await thumbResponse.json();
+        
+        // Map thumbnails to games
+        const thumbMap = new Map();
+        if (thumbData.data) {
+            thumbData.data.forEach((t: any) => {
+                thumbMap.set(t.targetId, t.imageUrl);
+            });
+        }
+
+        // 3. Transform Data
+        return games.map(g => ({
+            id: g.id,
+            rootPlaceId: g.rootPlaceId,
+            name: g.name,
+            description: g.placeDescription || "",
+            playerCount: g.playing || 0,
+            visits: g.visits || 0,
+            creatorName: g.creator?.name || "Unknown",
+            thumbnailUrl: thumbMap.get(g.id),
+            upVotes: g.totalUpVotes || 0,
+            downVotes: g.totalDownVotes || 0
+        }));
+
+    } catch (error) {
+        console.error("Roblox Games API Error:", error);
+        throw error;
+    }
+}

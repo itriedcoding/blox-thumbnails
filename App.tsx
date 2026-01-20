@@ -6,6 +6,7 @@ import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
+import { TopGames } from './components/TopGames';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
 import { sendToDiscord } from './services/discordService';
 
@@ -94,8 +95,9 @@ function App() {
           avatarModel: img.avatarModel,
           pose: img.pose,
           seed: img.seed,
-          aspectRatio: "16:9" // Default fallback as aspect ratio wasn't strictly stored in previous interface version
+          aspectRatio: "16:9" 
       });
+      setCurrentView('generator');
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -103,38 +105,43 @@ function App() {
   return (
     <div className="min-h-screen bg-[#020204] text-slate-100 selection:bg-neon-blue selection:text-black font-sans relative overflow-x-hidden">
         
-        {/* Global Atmosphere */}
-        <div className="fixed inset-0 pointer-events-none z-[100] opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+        {/* Global Atmosphere & Grain */}
+        <div className="fixed inset-0 pointer-events-none z-[100] opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
         
         {/* Deep Space Background */}
         <div className="fixed inset-0 z-0 pointer-events-none perspective-container">
-            <div className="absolute inset-0 bg-[#020204]"></div>
+            <div className="absolute inset-0 bg-[#020204] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0f1020] via-[#020204] to-[#020204]"></div>
             
-            {/* Ambient Spotlights */}
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-neon-blue/5 blur-[150px] rounded-full mix-blend-screen animate-pulse-slow"></div>
-            <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-neon-purple/5 blur-[150px] rounded-full mix-blend-screen animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+            {/* Cleaned up ambient light for professional look */}
+            <div className="absolute top-[-10%] left-[20%] w-[40vw] h-[40vw] bg-neon-blue/5 blur-[120px] rounded-full mix-blend-screen opacity-40"></div>
+            <div className="absolute bottom-[-10%] right-[10%] w-[40vw] h-[40vw] bg-purple-900/10 blur-[120px] rounded-full mix-blend-screen opacity-40"></div>
             
-            <div className="grid-floor opacity-10"></div>
+            {/* Subtle grid floor */}
+            <div className="grid-floor opacity-[0.07]"></div>
         </div>
 
         <div className="relative z-10 flex flex-col min-h-screen">
             <Navbar currentView={currentView} setView={setCurrentView} />
 
-            <main className="flex-1 flex flex-col pt-24 md:pt-32">
+            <main className="flex-1 flex flex-col pt-32 md:pt-40">
                 {currentView === 'home' && <Home setView={setCurrentView} />}
                 
+                {currentView === 'top-games' && <TopGames />}
+
                 {currentView === 'generator' && (
                     <div className="px-6 pb-32 w-full max-w-[1600px] mx-auto animate-fade-in-up">
                          <div className="text-center mb-16 relative">
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[100px] bg-neon-blue/20 blur-[80px] rounded-full pointer-events-none"></div>
-                            <span className="inline-block py-1.5 px-5 rounded-full bg-white/5 border border-white/10 text-neon-blue text-[10px] font-bold tracking-[0.3em] uppercase mb-6 backdrop-blur-md shadow-[0_0_20px_rgba(0,243,255,0.1)]">
-                              System Online
-                            </span>
-                            <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter uppercase font-sans drop-shadow-2xl">
-                              Neural <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-white to-neon-blue animate-shine bg-[length:200%_auto]">Studio</span>
+                            {/* Refined Header */}
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                <span className="text-[10px] font-bold text-slate-300 tracking-[0.2em] uppercase">Engine V8.2 Active</span>
+                            </div>
+                            
+                            <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter uppercase drop-shadow-2xl">
+                              Neural <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-white to-neon-blue bg-[length:200%_auto] animate-shine">Studio</span>
                             </h2>
                             <p className="text-slate-400 max-w-xl mx-auto text-lg font-light leading-relaxed">
-                              Configure the Nano Banana engine parameters below.
+                              Professional-grade render configuration.
                             </p>
                         </div>
                         <ThumbnailGenerator onImageGenerated={handleImageGenerated} remixConfig={remixConfig} />
@@ -150,21 +157,23 @@ function App() {
                 {currentView === 'privacy' && <Privacy />}
             </main>
 
-            {/* Cinematic Footer */}
-            <footer className="border-t border-white/5 bg-black/40 backdrop-blur-xl py-12 mt-auto relative z-20">
+            {/* Professional Footer */}
+            <footer className="border-t border-white/5 bg-[#050508]/60 backdrop-blur-xl py-12 mt-auto relative z-20">
                 <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="flex items-center gap-4">
                         <div className="w-8 h-8 rounded bg-white flex items-center justify-center text-black font-black text-xs">B</div>
                         <div className="flex flex-col">
                            <span className="font-bold text-white tracking-[0.2em] uppercase font-mono text-xs">BloxThumb</span>
+                           <span className="text-[10px] text-slate-600">Enterprise Edition</span>
                         </div>
                     </div>
                     <div className="flex gap-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        <button onClick={() => setCurrentView('terms')} className="hover:text-white transition-colors">Terms</button>
-                        <button onClick={() => setCurrentView('privacy')} className="hover:text-white transition-colors">Privacy</button>
+                        <button onClick={() => setCurrentView('terms')} className="hover:text-white transition-colors">Terms of Service</button>
+                        <button onClick={() => setCurrentView('privacy')} className="hover:text-white transition-colors">Privacy Policy</button>
+                        <button onClick={() => window.open('https://roblox.com', '_blank')} className="hover:text-white transition-colors">Roblox</button>
                     </div>
                     <div className="text-slate-700 text-[10px] font-mono uppercase tracking-wider">
-                        Powering {generatedImages.length + 1284} Creations
+                        © 2024 BloxThumb Inc.
                     </div>
                 </div>
             </footer>

@@ -1,7 +1,7 @@
 export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rpg' | 'anime' | 'high-ctr';
 export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R6' | 'R15' | 'Rthro';
-export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy';
+export type ViewType = 'home' | 'generator' | 'dashboard' | 'top-games' | 'terms' | 'privacy';
 
 declare global {
   interface AIStudio {
@@ -43,6 +43,19 @@ export interface RobloxAvatar {
   imageUrl: string;
   base64: string;
   model: AvatarModel;
+}
+
+export interface RobloxGame {
+  id: number; // Universe ID
+  rootPlaceId: number;
+  name: string;
+  description: string;
+  playerCount: number;
+  visits: number;
+  creatorName: string;
+  thumbnailUrl?: string; // Fetched separately
+  upVotes: number;
+  downVotes: number;
 }
 
 export interface PromptTemplate {
