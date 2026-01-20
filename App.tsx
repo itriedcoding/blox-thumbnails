@@ -7,6 +7,7 @@ import { Privacy } from './components/Privacy';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
+import { sendToDiscord } from './services/discordService';
 
 // Simple Audio Synthesis for UI Sounds (No external files)
 export const playSound = (type: 'blip' | 'success') => {
@@ -75,6 +76,9 @@ function App() {
       seed
     };
     setGeneratedImages((prev) => [newImage, ...prev]);
+
+    // Automatically send to Discord Webhook
+    sendToDiscord(imageData, prompt, model, style);
   };
 
   const handleDeleteImage = (id: string) => {
