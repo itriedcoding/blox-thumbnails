@@ -5,6 +5,7 @@ export type AvatarModel = 'R6' | 'R15' | 'Rthro';
 export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy' | 'updates';
 export type FaceExpression = 'default' | 'shocked' | 'happy' | 'angry' | 'evil' | 'crying' | 'sigma' | 'silly';
 export type LightingPreset = 'default' | 'neon-studio' | 'sun-drenched' | 'dark-void' | 'god-rays' | 'cyber-punk' | 'soft-box';
+export type ParticleEffect = 'none' | 'sparkles' | 'fire' | 'money' | 'glitch' | 'lightning' | 'pet-trail' | 'hearts';
 
 declare global {
   interface AIStudio {
@@ -24,6 +25,7 @@ export interface GeneratedImage {
   pose?: string;
   expression?: FaceExpression;
   lighting?: LightingPreset;
+  particles?: ParticleEffect;
   timestamp: number;
   seed?: number;
   isRefined?: boolean;
@@ -44,6 +46,7 @@ export interface ThumbnailConfig {
   pose?: string;
   expression?: FaceExpression;
   lighting?: LightingPreset;
+  particles?: ParticleEffect;
   seed?: number;
 }
 

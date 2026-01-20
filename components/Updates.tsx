@@ -11,31 +11,27 @@ interface VersionUpdate {
 
 const UPDATES: VersionUpdate[] = [
     {
-        version: "8.7.0",
+        version: "8.8.0",
         date: "Today",
         isMajor: true,
         changes: [
-            "ADDED: Hyper-CTR Engine - Advanced prompt injection for viral thumbnails (Red Arrows, Glowing Eyes, 150% Saturation)",
+            "ADDED: Particle FX System - Inject 3D particles directly into renders (Sparkles, Money, Fire, Glitch)",
+            "REWORKED: High-CTR Engine V3 - Now optimized purely for Roblox Discovery Algorithm (No YouTube tropes)",
+            "IMPROVED: Viral Element Injector - Replaced text spam with visual motifs (Floating Pets, Speed Trails)",
+            "IMPROVED: Lighting & Shading - Updated to match Blender Cycles 4.0 glossy plastic aesthetic"
+        ]
+    },
+    {
+        version: "8.7.0",
+        date: "Previous",
+        isMajor: true,
+        changes: [
+            "ADDED: Hyper-CTR Engine - Advanced prompt injection for viral thumbnails",
             "ADDED: Face Rig - Force specific avatar emotions (Shocked, Sigma, Crying, Rage)",
             "ADDED: Lighting Studio - Control environmental lighting (Neon Studio, God Rays, Dark Void)",
             "ADDED: Viral Keyword Injector - Automatically adds high-impact text to prompts in High-CTR mode",
             "IMPROVED: Prompt Engineering Logic - Smarter token placement for higher fidelity",
             "IMPROVED: UI Layout for Advanced Controls"
-        ]
-    },
-    {
-        version: "8.6.0",
-        date: "Previous",
-        isMajor: false,
-        changes: [
-            "ADDED: AI Vision Analysis",
-            "ADDED: Smart Upscaler V2",
-            "ADDED: Before/After Comparison",
-            "ADDED: Idea Dice",
-            "ADDED: Prompt History",
-            "ADDED: Editor Keyboard Shortcuts",
-            "ADDED: Text Gradients & Sticker Categories",
-            "ADDED: TikTok/Shorts Preview Mode"
         ]
     }
 ];

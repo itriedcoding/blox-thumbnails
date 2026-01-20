@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset } from "../types";
+import { ThumbnailConfig, ThumbnailStyle, ModelType, FaceExpression, LightingPreset, ParticleEffect } from "../types";
 
 // ==========================================
 // 🚀 GEMINI SERVICE (STANDARD)
@@ -40,7 +40,7 @@ const getStylePrompt = (style: ThumbnailStyle): string => {
     horror: "PHOTOREALISTIC HORROR. Grimy textures. Rust. Blood/Dirt decals. Volumetric fog. Low key lighting. Unsettling realism. Film Grain. High contrast shadows.",
     rpg: "FANTASY RPG GAME ART. Magic effects with particle lighting. Metallic armor reflections with scratches. Detailed environment textures. Epic scale. God Rays. Bloom.",
     anime: "HIGH FIDELITY ANIME 3D. Stylized realism. Detailed particle effects. Glowing auras. Vibrant colors but realistic shading and material response. Cel-shaded rim lights.",
-    "high-ctr": "VIRAL YOUTUBE CLICKBAIT MASTERPIECE. EXTREME SATURATION (150%). THICK WHITE OUTLINES on characters. GLOWING EYES. EXPRESSIVE FACE. ACTION BLUR. RED ARROWS pointing to subject. BRIGHTEST COLORS POSSIBLE. 4K RENDER."
+    "high-ctr": "ROBLOX DISCOVERY ALGORITHM OPTIMIZED. BLENDER 4.0 CYCLES RENDER. HIGH GLOSS PLASTIC MATERIALS. TOY SHADER. EXTREME BLOOM. THICK WHITE OUTLINE AROUND CHARACTER. VIBRANT GRADIENT BACKGROUND. 3D TEXTURE MAPPING. NO ARROWS. NO TEXT. PURE VISUAL APPEAL."
   };
   return styles[style] || styles.cinematic;
 };
@@ -70,7 +70,28 @@ const getLightingPrompt = (light?: LightingPreset): string => {
     }
 };
 
-const VIRAL_TOKENS = ["SECRET REVEALED", "IMPOSSIBLE", "99% FAIL", "HACKER", "ADMIN", "1,000,000 ROBUX", "LEGENDARY ITEM"];
+const getParticlePrompt = (particles?: ParticleEffect): string => {
+    switch (particles) {
+        case 'sparkles': return "FX: Floating glowing magical sparkles and stars surrounding the character.";
+        case 'fire': return "FX: Raging fire aura, embers flying, heat distortion around the character.";
+        case 'money': return "FX: Falling Robux stacks, gold coins raining down, wealth aura.";
+        case 'glitch': return "FX: Digital glitch artifacts, chromatic aberration, data stream particles.";
+        case 'lightning': return "FX: Crackling blue electricity arcs, lightning bolts striking background.";
+        case 'pet-trail': return "FX: Glowing speed trail, cute floating mini-pets following the character.";
+        case 'hearts': return "FX: Floating pink and red hearts, love aura, soft glow.";
+        default: return "";
+    }
+};
+
+// Replaced generic tokens with Roblox Visual Elements
+const ROBLOX_VISUAL_ELEMENTS = [
+    "Floating Legendary Pet Egg cracking open",
+    "Stack of Golden Bars in background",
+    "Glowing Blue Speed Trail",
+    "Magical Rune Circle on ground",
+    "Neon Floating Platforms",
+    "Shiny Diamond Sword on back"
+];
 
 export const generateRandomPrompt = async (): Promise<string> => {
   try {
@@ -221,24 +242,25 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
 
   let avatarSpecs = config.avatarModel === 'R6' ? 'Classic R6 Blocky' : config.avatarModel === 'R15' ? 'Modern R15 Segmented' : 'Realistic Rthro';
   
-  // VIRAL INJECTION LOGIC
+  // ROBLOX ALGORITHM INJECTION LOGIC
   let viralInjection = "";
   if (config.style === 'high-ctr') {
-      const randomViral = VIRAL_TOKENS[Math.floor(Math.random() * VIRAL_TOKENS.length)];
-      viralInjection = `SUBTLE BACKGROUND ELEMENT: "${randomViral}". MAKE IT CLICKBAIT.`;
+      const randomElement = ROBLOX_VISUAL_ELEMENTS[Math.floor(Math.random() * ROBLOX_VISUAL_ELEMENTS.length)];
+      viralInjection = `BACKGROUND ELEMENT: "${randomElement}". AESTHETIC: High Gloss, Plastic, Vibrant.`;
   }
 
   const finalPrompt = `
-    [TASK] Generate a ${isHighCtr ? 'VIRAL CLICKBAIT YOUTUBE THUMBNAIL' : 'Cinematic'} 3D Roblox Render.
+    [TASK] Generate a ${isHighCtr ? 'HIGH QUALITY ROBLOX GAME ICON' : 'Cinematic'} 3D Render.
     [SUBJECT] High-fidelity Roblox Avatar (${avatarSpecs}).
     [SCENE] ${config.prompt}
     [STYLE] ${getStylePrompt(config.style)}
     ${getExpressionPrompt(config.expression)}
     ${getLightingPrompt(config.lighting)}
+    ${getParticlePrompt(config.particles)}
     ${viralInjection}
-    [CAMERA] ${isHighCtr ? 'Wide Angle, Close-up on Face, Dynamic Action Angle' : 'Cinematic Composition, Rule of Thirds'}
-    [RENDER] Unreal Engine 5 Style, Octane Render, 8K Texture Resolution.
-    [NEGATIVE] ${config.negativePrompt || "low quality, text, watermark"}
+    [CAMERA] ${isHighCtr ? 'Dynamic Angle, Focused on Character, Depth of Field' : 'Cinematic Composition, Rule of Thirds'}
+    [RENDER] Blender Cycles, 8K Resolution, High Poly, Ambient Occlusion.
+    [NEGATIVE] ${config.negativePrompt || "low quality, text, watermark, bad anatomy, blur, noise, distorted face"}
   `;
 
   const parts: any[] = [];

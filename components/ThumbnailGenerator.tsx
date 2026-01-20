@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount, expandPrompt } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect } from '../types';
 import { ImageEditor } from './ImageEditor';
 import { playSound } from '../App';
 
@@ -52,6 +52,16 @@ const LIGHTING = [
     { id: 'god-rays', label: 'God Rays' },
 ];
 
+const PARTICLES: {id: ParticleEffect, label: string}[] = [
+    { id: 'none', label: 'None' },
+    { id: 'sparkles', label: '✨ Sparkles' },
+    { id: 'fire', label: '🔥 Fire' },
+    { id: 'money', label: '💸 Money' },
+    { id: 'glitch', label: '👾 Glitch' },
+    { id: 'lightning', label: '⚡ Lightning' },
+    { id: 'pet-trail', label: '🐾 Pet Trail' },
+];
+
 // IDEA DICE COMPONENTS
 const DICE_SUBJECTS = ["Noob", "Pro Gamer", "Zombie", "Hacker", "Princess", "Ninja", "Police Officer"];
 const DICE_ACTIONS = ["running from", "fighting", "discovering", "eating", "driving", "falling off"];
@@ -84,6 +94,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   
   const [expression, setExpression] = useState<FaceExpression>('default');
   const [lighting, setLighting] = useState<LightingPreset>('default');
+  const [particles, setParticles] = useState<ParticleEffect>('none');
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0); 
@@ -104,6 +115,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           setPose(remixConfig.pose || 'auto');
           setExpression(remixConfig.expression || 'default');
           setLighting(remixConfig.lighting || 'default');
+          setParticles(remixConfig.particles || 'none');
           if (remixConfig.seed) setSeed(remixConfig.seed);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           playSound('blip');
@@ -211,7 +223,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 prompt, 
                 negativePrompt, 
                 referenceImage: referenceImage || undefined,
-                aspectRatio, style, model, avatarModel, pose, expression, lighting,
+                aspectRatio, style, model, avatarModel, pose, expression, lighting, particles,
                 seed: currentSeed 
             };
             return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
@@ -327,7 +339,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     </div>
                 </div>
 
-                {/* Face & Lighting Controls (New) */}
+                {/* Face & Lighting Controls */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-t border-white/5 pt-8">
                      <div>
                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Face Rig</label>
@@ -341,13 +353,19 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         </div>
                      </div>
                      <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Lighting Studio</label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Lighting & FX</label>
+                         <div className="grid grid-cols-2 gap-2 mb-4">
                              {LIGHTING.map((l) => (
                                  <button key={l.id} onClick={() => setLighting(l.id as any)} className={`py-2 px-3 rounded text-[10px] font-bold uppercase border text-left transition-all ${lighting === l.id ? 'bg-white/10 border-neon-blue text-neon-blue' : 'bg-transparent border-white/10 text-slate-500 hover:text-slate-300'}`}>
                                      {l.label}
                                  </button>
                              ))}
+                        </div>
+                        {/* New Particles Selector */}
+                        <div className="relative group">
+                            <select value={particles} onChange={(e) => setParticles(e.target.value as any)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold uppercase text-slate-300 outline-none">
+                                {PARTICLES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                            </select>
                         </div>
                      </div>
                 </div>
