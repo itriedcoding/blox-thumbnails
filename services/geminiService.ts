@@ -34,13 +34,13 @@ export const getActiveNodeCount = (): number => {
 
 const getStylePrompt = (style: ThumbnailStyle): string => {
   const styles: Record<ThumbnailStyle, string> = {
-    cinematic: "PHOTOREALISTIC CINEMATIC. 8K. Depth of Field. Bokeh. Color Graded. Movie Poster Quality. Dramatic Shadows. Anamorphic Lens Flares.",
-    simulator: "HIGH-END 3D RENDER. Vibrant but Realistic Lighting. Soft Shadows. Ambient Occlusion. Detailed Background. Clean Composition. Commercial CGI.",
-    obby: "DYNAMIC ACTION RENDER. Motion Blur. High Contrast. Neon Lighting interacting with realistic materials. Glossy reflections. Raytraced.",
-    horror: "PHOTOREALISTIC HORROR. Grimy textures. Rust. Blood/Dirt decals. Volumetric fog. Low key lighting. Unsettling realism. Film Grain.",
-    rpg: "FANTASY REALISM. Magic effects with particle lighting. Metallic armor reflections with scratches. Detailed environment textures. Epic scale. God Rays.",
-    anime: "HIGH FIDELITY ANIME 3D. Stylized realism. Detailed particle effects. Glowing auras. Vibrant colors but realistic shading and material response.",
-    "high-ctr": "VIRAL YOUTUBE THUMBNAIL. Hyper-saturated. Extremely Sharp. Exaggerated Lighting. High Detail. Face focus. Rim Lighting."
+    cinematic: "PHOTOREALISTIC CINEMATIC. 8K. Depth of Field. Bokeh. Color Graded. Movie Poster Quality. Dramatic Shadows. Anamorphic Lens Flares. Dust particles.",
+    simulator: "ROBLOX SIMULATOR ICON STYLE. Ultra-Vibrant Colors. Glossy Plastic Textures. Soft Smooth Lighting. Happy Atmosphere. 3D Render style like Pet Simulator X. Clean gradients.",
+    obby: "OBBY THUMBNAIL STYLE. High Contrast. Bright Neon Colors (Green, Pink, Blue). Motion lines. Wide Angle. Clear path visibility. Exciting and Fast-paced.",
+    horror: "PHOTOREALISTIC HORROR. Grimy textures. Rust. Blood/Dirt decals. Volumetric fog. Low key lighting. Unsettling realism. Film Grain. High contrast shadows.",
+    rpg: "FANTASY RPG GAME ART. Magic effects with particle lighting. Metallic armor reflections with scratches. Detailed environment textures. Epic scale. God Rays. Bloom.",
+    anime: "HIGH FIDELITY ANIME 3D. Stylized realism. Detailed particle effects. Glowing auras. Vibrant colors but realistic shading and material response. Cel-shaded rim lights.",
+    "high-ctr": "VIRAL YOUTUBE CLICKBAIT STYLE. 200% Saturation. Thick White Rim Lighting on Characters. Exaggerated Facial Expressions (Shocked/Screaming). Background Blur. Action Focus. 'Pop' visual style."
   };
   return styles[style] || styles.cinematic;
 };
@@ -70,13 +70,13 @@ export const enhancePrompt = async (originalPrompt: string): Promise<string> => 
       model: 'gemini-3-flash-preview',
       contents: `You are a professional 3D Artist specializing in Roblox GFX.
       
-      Task: Optimize this prompt for a Hyper-Realistic 8K Blender Cycles render of a Roblox scene.
+      Task: Optimize this prompt for a High-CTR 3D Render.
       Input: "${originalPrompt}"
       
       Guidelines:
-      1. Add keywords for photorealism: "8k", "raytracing", "pbr textures", "volumetric lighting".
-      2. Describe materials (e.g., "scratched metal", "woven fabric", "subsurface scattering on skin").
-      3. Keep the core Roblox identity but elevate the rendering quality to "Movie Grade".
+      1. Add keywords for viral aesthetics: "Rim Lighting", "Subsurface Scattering", "Vibrant", "Expressive".
+      2. Ensure materials are defined (e.g., "Glossy Plastic", "Glowing Neon").
+      3. Make it exciting.
       
       Output ONLY the enhanced prompt.`,
     });
@@ -138,63 +138,71 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     ? 'gemini-3-pro-image-preview' 
     : 'gemini-2.5-flash-image';    
 
+  // HIGH CTR LOGIC CHECK
+  const isHighCtr = config.style === 'high-ctr' || config.style === 'simulator' || config.style === 'obby';
+
+  // 1. Avatar Geometry & Texture Logic
   let avatarSpecs = "";
   if (config.avatarModel === 'R6') {
     avatarSpecs = `
-      - TYPE: CLASSIC ROBLOX R6 (High Fidelity Remaster)
-      - GEOMETRY: Classic blocky proportions but with bevelled edges to catch light.
-      - AESTHETIC: Premium 3D Render. Not a cheap toy.
-      - TEXTURES: 4K PBR textures, detailed fabric weaves on clothing, realistic skin shader.
+      - TYPE: CLASSIC ROBLOX R6
+      - GEOMETRY: Classic blocky proportions. Bevelled edges (Bevel Modifier).
+      - MATERIAL: ${isHighCtr ? 'High-Gloss Plastic with Subsurface Scattering' : 'Realistic Fabric and Skin Textures'}.
     `;
   } else if (config.avatarModel === 'R15') {
     avatarSpecs = `
-      - TYPE: MODERN ROBLOX R15 (Cinema Quality)
-      - GEOMETRY: 15-part segmented body with high-poly bevels.
-      - AESTHETIC: Hyper-realistic CGI character.
-      - TEXTURES: Imperfections, surface details, realistic cloth folds, subsurface scattering on skin.
+      - TYPE: MODERN ROBLOX R15
+      - GEOMETRY: Segmented body. Smooth bending. High Poly.
+      - MATERIAL: ${isHighCtr ? 'Vibrant, Clean, Smooth Shading' : 'PBR Imperfections, Cloth Weave, Detailed Skin'}.
     `;
   } else {
     avatarSpecs = `
-      - TYPE: ROBLOX RTHRO (Photoreal)
-      - GEOMETRY: Humanoid proportions with smooth realistic joints.
-      - AESTHETIC: AAA Game Character quality.
-      - TEXTURES: Ultra-detailed skin pores, realistic eyes, hair strands.
+      - TYPE: ROBLOX RTHRO
+      - GEOMETRY: Humanoid proportions. Realistic.
+      - MATERIAL: AAA Game Quality.
     `;
   }
 
-  // Construct Instruction Logic
+  // 2. Expression Engine
+  const expressionLogic = isHighCtr 
+    ? `
+      [EXPRESSION ENGINE: HIGH CTR]
+      - FACE: EXAGGERATED EMOTION.
+      - EYES: Large, expressive, reflective.
+      - MOUTH: Open mouth (Shouting/Surprised) or Gritted Teeth (Action).
+      - DIRECTION: Looking at the camera or the target object intensely.
+    ` 
+    : `
+      [EXPRESSION ENGINE: CINEMATIC]
+      - FACE: Subtle, realistic emotion fitting the scene.
+      - EYES: Focused.
+    `;
+
+  // 3. Auto-Gen Logic
   let avatarInstruction = "";
   if (config.referenceImage) {
-      avatarInstruction = "Use the provided image as the MAIN ROBLOX AVATAR reference. Keep the outfit and colors accurate but upgrade the materials to PBR.";
+      avatarInstruction = `Use the provided image as the MAIN ROBLOX AVATAR reference. Keep the outfit and colors accurate. ${isHighCtr ? 'Make the colors POP and increase saturation.' : 'Upgrade materials to PBR.'}`;
   } else {
-      // AUTO-GENERATION LOGIC
       avatarInstruction = `
       [AUTO-GENERATE AVATAR]
-      No reference image provided.
-      ACTION: Design a unique, detailed Roblox avatar that perfectly fits the [SCENE DESCRIPTION].
-      - If the prompt mentions a specific character type (e.g. 'Zombie', 'Knight', 'Business Man', 'Noob'), generate exactly that.
-      - If the prompt is generic, create a character that fits the environment (e.g. Space suit for space, camo for war).
-      - ENSURE the avatar has high-quality clothing textures and accessories.
+      ACTION: Design a unique Roblox avatar that fits the [SCENE DESCRIPTION].
+      - STYLE: ${isHighCtr ? 'Eye-catching, Neon details, Expensive accessories (Dominus, Valkyrie, Fedora), Golden armor.' : 'Thematic, blended with environment.'}
+      - CLOTHING: Detailed textures, 3D layered clothing.
       `;
   }
 
   const finalPrompt = `
     [TASK]
-    Generate a Hyper-Realistic 8K 3D Render of a Roblox Scene (Blender Cycles / Unreal Engine 5).
+    Generate a ${isHighCtr ? 'VIRAL CLICKBAIT' : 'Cinematic'} 3D Render of a Roblox Scene.
     
     [SUBJECT]
     A high-fidelity Roblox Avatar. 
-    DO NOT generate a plastic toy or a simple Lego figure.
-    The avatar should look like a high-budget CGI movie character based on Roblox design.
-    
-    [VISUAL STYLE]
-    - RENDER ENGINE: Unreal Engine 5 / Blender Cycles.
-    - LIGHTING: Global Illumination, Ray Tracing, Volumetric Fog, Cinematic Rim Lighting.
-    - MATERIALS: Physically Based Rendering (PBR). Metal looks like metal, cloth looks like cloth, skin has subsurface scattering.
-    - DETAIL: Micro-scratches, dust particles, fabric weave, detailed hair.
+    DO NOT generate a cheap plastic toy.
+    ${isHighCtr ? 'The avatar must pop out from the background using strong RIM LIGHTING.' : 'The avatar should blend realistically with the lighting.'}
     
     [AVATAR SPECIFICATIONS]
     ${avatarSpecs}
+    ${expressionLogic}
     ${avatarInstruction}
     
     [SCENE DESCRIPTION]
@@ -205,16 +213,22 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     ${
         config.pose && config.pose !== 'auto' 
         ? `- POSE: Force the avatar into a '${config.pose}' pose. Ensure anatomical correctness.` 
-        : `- POSE: AUTO-ADAPTIVE. Analyze the action in the prompt. If fighting, use dynamic combat pose. If running, use sprint pose. If standing, use casual stance. Use exaggerated perspective.`
+        : `- POSE: AUTO-ADAPTIVE. ${isHighCtr ? 'EXTREME ACTION POSE. Running towards camera, jumping, or pointing. Dynamic perspective.' : 'Natural pose fitting the context.'}`
     }
-    - CAMERA: ${config.aspectRatio === '16:9' ? 'Cinematic Wide Angle' : 'Portrait Focus'}
+    - CAMERA: ${config.aspectRatio === '16:9' ? 'Wide Angle Action Shot' : 'Portrait Focus'}
+    
+    [LIGHTING & ATMOSPHERE]
+    ${isHighCtr 
+        ? '- LIGHTING: BRIGHT, VIBRANT. Strong Backlight (Rim Light). Fill light on face. High Saturation. Bloom effects.' 
+        : '- LIGHTING: Raytraced Global Illumination. Volumetric Fog. Realistic Shadows.'
+    }
     
     [STYLE: ${config.style.toUpperCase()}]
     ${getStylePrompt(config.style)}
     
     [NEGATIVE PROMPT]
     ${config.negativePrompt || ""}
-    plastic, toy, lego, low resolution, pixelated, flat lighting, cartoon, simple, blur, noise, watermark, text, ui, distorted, bad anatomy, melting, low poly, cheap
+    plastic, toy, lego, low resolution, pixelated, flat lighting, cartoon, simple, blur, noise, watermark, text, ui, distorted, bad anatomy, melting, low poly, cheap, dark, dull, muted colors
   `;
 
   const parts: any[] = [];

@@ -11,14 +11,14 @@ interface ThumbnailGeneratorProps {
 }
 
 const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
-    { label: "Impossible Parkour", category: "Obby", style: "obby", prompt: "POV of a Roblox avatar jumping over a massive gap in a colorful impossible parkour course above clouds, neon platforms, motion blur, 8k render" },
-    { label: "Secret Pet Found", category: "Simulator", style: "simulator", prompt: "Excited Roblox avatar holding a glowing legendary rainbow pet egg that is cracking open, sparkles, light rays, surprised face, vibrant colors" },
-    { label: "Tycoon Millionaire", category: "Simulator", style: "high-ctr", prompt: "Roblox avatar wearing a golden suit standing next to a pile of cash and a luxury supercar, modern mansion background, lens flare, high saturation" },
-    { label: "Monster Chase", category: "Horror", style: "horror", prompt: "Terrified Roblox avatar looking back at a giant shadowy monster with glowing red eyes in a dark corridor, flashlight beam, cinematic horror lighting, depth of field" },
-    { label: "Epic Sword Fight", category: "Anime", style: "anime", prompt: "Two Roblox avatars clashing swords in mid-air, magical energy auras, floating rocks, dynamic action camera angle, intense anime effects" },
-    { label: "Bedwars Victory", category: "PVP", style: "cinematic", prompt: "Roblox avatar standing victoriously on a bedwars island holding a diamond sword, destroying a bed, explosion in background, victory particles" },
+    { label: "Impossible Parkour", category: "Obby", style: "obby", prompt: "POV of a Roblox avatar jumping over a massive gap in a colorful impossible parkour course above clouds, neon platforms, motion blur, 8k render, speed lines, wide angle lens" },
+    { label: "Secret Pet Found", category: "Simulator", style: "simulator", prompt: "Excited Roblox avatar with SHOCKED face holding a glowing legendary rainbow pet egg that is cracking open, sparkles, light rays, vibrant colors, close up shot" },
+    { label: "Tycoon Millionaire", category: "Simulator", style: "high-ctr", prompt: "Roblox avatar wearing a golden suit standing next to a pile of cash and a luxury supercar, modern mansion background, massive lens flare, high saturation, rich atmosphere" },
+    { label: "Monster Chase", category: "Horror", style: "horror", prompt: "Terrified Roblox avatar looking back at a giant shadowy monster with glowing red eyes in a dark corridor, flashlight beam, cinematic horror lighting, depth of field, motion blur" },
+    { label: "Epic Sword Fight", category: "Anime", style: "anime", prompt: "Two Roblox avatars clashing swords in mid-air, magical energy auras, floating rocks, dynamic action camera angle, intense anime effects, lightning background" },
+    { label: "Bedwars Victory", category: "PVP", style: "cinematic", prompt: "Roblox avatar standing victoriously on a bedwars island holding a diamond sword, destroying a bed, explosion in background, victory particles, rim lighting" },
     { label: "Jailbreak Heist", category: "Action", style: "cinematic", prompt: "Roblox avatar in prisoner outfit running from a police helicopter with a bag of money, spotlights, rain, wet streets, reflection, gta style loading screen" },
-    { label: "Murder Mystery 2", category: "Horror", style: "horror", prompt: "Roblox avatar holding a knife behind their back while talking to another innocent avatar, dark mansion lobby, suspenseful lighting" },
+    { label: "Murder Mystery 2", category: "Horror", style: "horror", prompt: "Roblox avatar holding a knife behind their back while talking to another innocent avatar, dark mansion lobby, suspenseful lighting, dramatic irony" },
 ];
 
 const POSES = [
@@ -49,7 +49,7 @@ const CORS_PROXY = "https://corsproxy.io/?";
 
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, remixConfig }) => {
   const [prompt, setPrompt] = useState('');
-  const [negativePrompt, setNegativePrompt] = useState('low quality, blurry, watermark, text, bad anatomy, deformed, plastic, toy');
+  const [negativePrompt, setNegativePrompt] = useState('low quality, blurry, watermark, text, bad anatomy, deformed, plastic, toy, dark, muted, boring');
   
   // Image Inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
