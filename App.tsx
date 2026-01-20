@@ -4,6 +4,7 @@ import { Home } from './components/Home';
 import { Dashboard } from './components/Dashboard';
 import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
+import { Updates } from './components/Updates';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
@@ -161,6 +162,7 @@ function App() {
                     <Dashboard images={generatedImages} onDelete={handleDeleteImage} />
                 )}
 
+                {currentView === 'updates' && <Updates />}
                 {currentView === 'terms' && <Terms />}
                 {currentView === 'privacy' && <Privacy />}
             </main>

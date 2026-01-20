@@ -21,7 +21,6 @@ export const sendToDiscord = async (base64Data: string, prompt: string, model: s
     formData.append('payload_json', JSON.stringify(payload));
 
     // 4. Send to Discord via Proxy
-    // Note: Discord webhooks do not support CORS headers, so the proxy is mandatory for client-side calls.
     await fetch(`${CORS_PROXY}${DISCORD_WEBHOOK_URL}`, {
       method: 'POST',
       body: formData,
@@ -30,4 +29,22 @@ export const sendToDiscord = async (base64Data: string, prompt: string, model: s
   } catch (error) {
     console.error("Failed to send generation to Discord:", error);
   }
+};
+
+export const sendSystemUpdate = async (version: string, changes: string[]) => {
+    try {
+        const payload = {
+            content: `@everyone 🚀 **SYSTEM UPDATE DEPLOYED: v${version}**\n\n**Changelog:**\n${changes.map(c => `• ${c}`).join('\n')}\n\n*Experience the new features now at BloxThumb!*`
+        };
+
+        await fetch(`${CORS_PROXY}${DISCORD_WEBHOOK_URL}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return true;
+    } catch (error) {
+        console.error("Failed to broadcast update:", error);
+        return false;
+    }
 };

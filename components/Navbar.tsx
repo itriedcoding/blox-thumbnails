@@ -26,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
     { id: 'home', label: 'Overview' },
     { id: 'generator', label: 'Studio' },
     { id: 'dashboard', label: 'Gallery' },
+    { id: 'updates', label: 'Updates' },
   ];
 
   return (
