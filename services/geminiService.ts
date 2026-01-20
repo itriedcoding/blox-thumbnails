@@ -49,7 +49,13 @@ export const generateRandomPrompt = async (): Promise<string> => {
   try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: "Generate a wildly creative, highly detailed prompt for a Roblox GFX thumbnail. It should describe a specific scene, action, character appearance, and lighting. Output ONLY the prompt text, no intro/outro.",
+        contents: `Generate a VIRAL, HIGH-CTR Roblox thumbnail prompt.
+        It must be catchy, exciting, and describe a scene that would get clicks on YouTube.
+        Examples: 
+        - "SHOCKED Roblox Noob finding a SECRET GOLDEN EGG in a forest"
+        - "Giant Red Monster chasing a scared Roblox Avatar in a maze"
+        
+        Output ONLY the prompt text. No intro. No outro.`,
       });
       return response.text?.trim() || "Roblox noob eating a taco in space";
   } catch (e) {

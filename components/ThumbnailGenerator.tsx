@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount } from '../services/geminiService';
 import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig } from '../types';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate } from '../types';
 import { ImageEditor } from './ImageEditor';
 import { playSound } from '../App';
 
@@ -9,6 +9,34 @@ interface ThumbnailGeneratorProps {
   onImageGenerated: (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, pose?: string, negativePrompt?: string, seed?: number) => void;
   remixConfig?: ThumbnailConfig | null;
 }
+
+const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
+    { label: "Impossible Parkour", category: "Obby", style: "obby", prompt: "POV of a Roblox avatar jumping over a massive gap in a colorful impossible parkour course above clouds, neon platforms, motion blur, 8k render" },
+    { label: "Secret Pet Found", category: "Simulator", style: "simulator", prompt: "Excited Roblox avatar holding a glowing legendary rainbow pet egg that is cracking open, sparkles, light rays, surprised face, vibrant colors" },
+    { label: "Tycoon Millionaire", category: "Simulator", style: "high-ctr", prompt: "Roblox avatar wearing a golden suit standing next to a pile of cash and a luxury supercar, modern mansion background, lens flare, high saturation" },
+    { label: "Monster Chase", category: "Horror", style: "horror", prompt: "Terrified Roblox avatar looking back at a giant shadowy monster with glowing red eyes in a dark corridor, flashlight beam, cinematic horror lighting, depth of field" },
+    { label: "Epic Sword Fight", category: "Anime", style: "anime", prompt: "Two Roblox avatars clashing swords in mid-air, magical energy auras, floating rocks, dynamic action camera angle, intense anime effects" },
+    { label: "Bedwars Victory", category: "PVP", style: "cinematic", prompt: "Roblox avatar standing victoriously on a bedwars island holding a diamond sword, destroying a bed, explosion in background, victory particles" },
+    { label: "Jailbreak Heist", category: "Action", style: "cinematic", prompt: "Roblox avatar in prisoner outfit running from a police helicopter with a bag of money, spotlights, rain, wet streets, reflection, gta style loading screen" },
+    { label: "Adopt Me Trade", category: "Simulator", style: "simulator", prompt: "Two Roblox avatars trading legendary neon pets, trade menu overlay style, sparkles, happy faces, pastel color palette, cute aesthetic" },
+    { label: "Blox Fruits Awakening", category: "Anime", style: "anime", prompt: "Roblox avatar transforming with a devil fruit power, massive dragon aura, lightning bolts, ocean background, one piece style graphics" },
+    { label: "Doors Entity", category: "Horror", style: "horror", prompt: "Roblox avatar hiding in a closet from the Rush entity, distorted vision, red lighting, static noise effect, scary atmosphere" },
+    { label: "Fashion Show", category: "Roleplay", style: "cinematic", prompt: "Roblox avatar walking down a fashion runway wearing a detailed designer dress, paparazzi camera flashes, spotlight, glamorous atmosphere" },
+    { label: "Speed Run World Record", category: "Obby", style: "obby", prompt: "Roblox avatar blurring past obstacles at supersonic speed, timer hud elements, motion lines, wide angle lens, dynamic perspective" },
+    { label: "Zombie Survival", category: "Shooter", style: "rpg", prompt: "Roblox avatar holding a shotgun defending a barricade against a horde of zombies, muzzle flash, empty shells flying, apocalypse city background" },
+    { label: "Deep Space Mining", category: "Sci-Fi", style: "cinematic", prompt: "Roblox avatar in a futuristic spacesuit mining a glowing crystal on an asteroid, galaxy nebula background, zero gravity floating debris" },
+    { label: "Medieval Castle Siege", category: "RPG", style: "rpg", prompt: "Roblox avatar knight leading an army towards a massive castle, catapults firing, fire arrows, epic war atmosphere, volumetric fog" },
+    { label: "Youtuber Reacts", category: "High CTR", style: "high-ctr", prompt: "Close up of Roblox avatar face making a shocked expression with mouth open, red arrow pointing to a mystery box, vibrant yellow background" },
+    { label: "Pet Simulator X Huge", category: "Simulator", style: "simulator", prompt: "Roblox avatar surrounded by dozens of huge cat pets, coins everywhere, chest opening, confetti, dopamine rush visual" },
+    { label: "Murder Mystery 2", category: "Horror", style: "horror", prompt: "Roblox avatar holding a knife behind their back while talking to another innocent avatar, dark mansion lobby, suspenseful lighting" },
+    { label: "Natural Disaster", category: "Survival", style: "cinematic", prompt: "Roblox avatar running from a massive tsunami wave destroying a tower, chaotic physics, debris, splashing water, panic" },
+    { label: "Arsenal Killstreak", category: "Shooter", style: "high-ctr", prompt: "Roblox avatar performing a trickshot with a sniper rifle, kill feed overlay style, golden gun, lens flare, saturated colors" },
+    { label: "Brookhaven Roleplay", category: "Roleplay", style: "simulator", prompt: "Roblox family standing in front of a suburban house, happy expressions, bright sunny day, trees, peaceful neighborhood vibe" },
+    { label: "Tower of Hell Fall", category: "Obby", style: "obby", prompt: "Roblox avatar falling from the top of a colorful tower, looking down at the ground far below, motion blur, dizzying perspective" },
+    { label: "Piggy Jumpscare", category: "Horror", style: "horror", prompt: "Piggy character swinging a bat at the camera, extreme close up, distorted lens, glitch effect, ominous red fog" },
+    { label: "Vehicle Simulator Drift", category: "Racing", style: "cinematic", prompt: "Roblox avatar drifting a customized jdm car around a corner, smoke from tires, sparks, city night lights, motion blur background" },
+    { label: "Anime Gacha Pull", category: "Anime", style: "anime", prompt: "Roblox avatar summoning a 5-star character, golden light pillar, magical circles, tarot cards flying, ethereal glow" }
+];
 
 const POSES = [
     { id: 'standing', label: 'Idle / Standing', icon: '🧍' },
@@ -79,6 +107,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [batchSize, setBatchSize] = useState<number>(1);
+  const [showLibrary, setShowLibrary] = useState(false);
   
   const [inputMethod, setInputMethod] = useState<'upload' | 'url' | 'roblox'>('roblox');
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "9:16">("16:9");
@@ -139,6 +168,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       } finally {
           setIsRolling(false);
       }
+  };
+
+  const handleApplyTemplate = (t: PromptTemplate) => {
+      setPrompt(t.prompt);
+      setStyle(t.style);
+      setShowLibrary(false);
+      playSound('blip');
   };
 
   const getPromptStrength = () => {
@@ -302,6 +338,9 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                          <h3 className="text-2xl font-bold text-white uppercase tracking-tighter">Render Configuration</h3>
                     </div>
                     <div className="flex items-center gap-3">
+                         <button onClick={() => setShowLibrary(true)} className="px-4 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-lg text-xs hover:bg-purple-500 hover:text-white flex items-center gap-2 transition-all font-bold tracking-wider" title="Prompt Library">
+                             📚 Library
+                        </button>
                         <button onClick={handleRandomize} disabled={isRolling} className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs hover:bg-white/10 flex items-center gap-2" title="AI Random Prompt">
                              {isRolling ? <div className="w-4 h-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div> : '🎲 AI Roll'}
                         </button>
@@ -528,6 +567,35 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 )}
             </div>
         </div>
+
+        {/* PROMPT LIBRARY MODAL */}
+        {showLibrary && (
+            <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-fade-in-up">
+                <div className="w-full max-w-4xl bg-[#0a0a10] border border-white/10 rounded-3xl p-8 max-h-[90vh] overflow-hidden flex flex-col relative">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter">High CTR Template Library</h2>
+                        <button onClick={() => setShowLibrary(false)} className="text-slate-500 hover:text-white text-xs uppercase font-bold tracking-widest">Close [ESC]</button>
+                    </div>
+                    
+                    <div className="overflow-y-auto custom-scrollbar flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-2">
+                        {HIGH_CTR_TEMPLATES.map((t, idx) => (
+                            <button 
+                                key={idx} 
+                                onClick={() => handleApplyTemplate(t)}
+                                className="text-left p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-neon-blue/50 transition-all group"
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-[10px] font-bold text-neon-blue uppercase tracking-widest bg-neon-blue/10 px-2 py-1 rounded">{t.category}</span>
+                                    <span className="text-[10px] text-slate-500 font-mono">{t.style}</span>
+                                </div>
+                                <h3 className="text-sm font-bold text-white mb-2 group-hover:text-neon-blue transition-colors">{t.label}</h3>
+                                <p className="text-[10px] text-slate-400 line-clamp-3 leading-relaxed opacity-70 group-hover:opacity-100">{t.prompt}</p>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )}
         
         {/* Editor Overlay */}
         {editorImage && (
