@@ -22,6 +22,7 @@ const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
 ];
 
 const POSES = [
+    { id: 'auto', label: '✨ AI Match', icon: '🧠' },
     { id: 'standing', label: 'Idle / Standing', icon: '🧍' },
     { id: 'fighting_stance', label: 'Combat Stance', icon: '🥊' },
     { id: 'running', label: 'Sprinting', icon: '🏃' },
@@ -54,7 +55,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [secondReferenceImage, setSecondReferenceImage] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState('');
+  const [customImageUrl, setCustomImageUrl] = useState(''); // New State for URL input
   
   // Roblox State
   const [robloxUsername, setRobloxUsername] = useState('');
@@ -73,7 +74,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [style, setStyle] = useState<ThumbnailStyle>('cinematic');
   const [model, setModel] = useState<ModelType>('flash');
   const [avatarModel, setAvatarModel] = useState<AvatarModel>('R15'); 
-  const [pose, setPose] = useState<string>('standing');
+  const [pose, setPose] = useState<string>('auto'); // Default to Auto
   const [lighting, setLighting] = useState('');
   const [camera, setCamera] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -97,7 +98,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           setStyle(remixConfig.style);
           setModel(remixConfig.model);
           setAvatarModel(remixConfig.avatarModel);
-          if (remixConfig.pose) setPose(remixConfig.pose);
+          setPose(remixConfig.pose || 'auto');
           if (remixConfig.seed) setSeed(remixConfig.seed);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           playSound('blip');
@@ -154,10 +155,19 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       reader.onloadend = () => {
         setReferenceImage(reader.result as string);
         setAvatarData(null);
+        setCustomImageUrl('');
         setError(null);
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const handleImageUrlBlur = () => {
+      if (customImageUrl.trim()) {
+          setReferenceImage(customImageUrl);
+          setAvatarData(null); // Clear roblox specific data
+          setError(null);
+      }
   };
 
   const fetchAvatar = async (username: string, setFetching: (b: boolean) => void, setData: (d: RobloxAvatar) => void, setRef: (s: string) => void) => {
@@ -169,6 +179,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           const avatar = await getRobloxAvatar(username, avatarModel);
           setData(avatar);
           setRef(avatar.base64);
+          setCustomImageUrl('');
       } catch (err: any) {
           setError(`Roblox Error: ${err.message}`);
       } finally {
@@ -177,7 +188,6 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   }
 
   const handleFetchRobloxAvatar1 = () => fetchAvatar(robloxUsername, setIsFetchingAvatar1, setAvatarData, setReferenceImage);
-  const handleFetchRobloxAvatar2 = () => fetchAvatar(robloxUsername2, setIsFetchingAvatar2, setSecondAvatarData, setSecondReferenceImage);
 
   const handleEnhancePrompt = async () => {
     if (!prompt.trim()) return;
@@ -347,13 +357,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     <div className="md:col-span-2">
                         <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 flex justify-between items-center">
                             <span>Character Action</span>
-                            <span className="text-neon-blue">{POSES.find(p => p.id === pose)?.label}</span>
+                            <span className="text-neon-blue">{POSES.find(p => p.id === pose)?.label || 'Auto'}</span>
                         </label>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                        <div className="grid grid-cols-3 sm:grid-cols-7 gap-3">
                             {POSES.map((p) => (
                                 <button key={p.id} onClick={() => setPose(p.id)} className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:scale-105 ${pose === p.id ? 'bg-gradient-to-b from-white/10 to-white/5 border-neon-blue/50 text-white shadow-[0_0_15px_-5px_rgba(0,243,255,0.3)]' : 'bg-black/30 border-white/5 text-slate-600 hover:text-slate-300'}`}>
                                     <span className="text-2xl mb-2 filter drop-shadow-lg">{p.icon}</span>
-                                    <span className="text-[9px] font-bold uppercase tracking-wider">{p.label}</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-center leading-tight">{p.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -391,8 +401,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     
                     {/* Tab Switcher */}
                     <div className="flex bg-black/40 rounded-xl p-1.5 mb-8 border border-white/5">
-                        <button onClick={() => { setActiveTab('prompt'); setReferenceImage(null); setAvatarData(null); }} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'prompt' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>AI Auto-Gen</button>
-                        <button onClick={() => setActiveTab('avatar')} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'avatar' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>Roblox User</button>
+                        <button onClick={() => { setActiveTab('prompt'); setReferenceImage(null); setAvatarData(null); setCustomImageUrl(''); }} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'prompt' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>AI Auto-Gen</button>
+                        <button onClick={() => setActiveTab('avatar')} className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'avatar' ? 'bg-white text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>Reference</button>
                     </div>
 
                     <div className="flex-1 flex flex-col items-center justify-start relative rounded-2xl overflow-hidden min-h-[300px]">
@@ -414,7 +424,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                              </div>
                         )}
 
-                        {/* MODE: ROBLOX USER */}
+                        {/* MODE: ROBLOX USER / UPLOAD / URL */}
                         {activeTab === 'avatar' && (
                              <div className="w-full space-y-4 animate-fade-in-up">
                                 <div className="flex gap-2 mb-4 bg-black/40 p-1.5 rounded-xl border border-white/5">
@@ -425,30 +435,45 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
 
                                 <div className="bg-black/30 p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                                     <label className="text-[10px] text-slate-500 font-bold uppercase mb-3 block flex justify-between">
-                                        <span>Primary Avatar</span>
-                                        {avatarData && <span className="text-neon-green">Synced</span>}
+                                        <span>Reference Avatar</span>
+                                        {avatarData && <span className="text-neon-green">Roblox API</span>}
+                                        {!avatarData && referenceImage && <span className="text-neon-purple">Custom Upload</span>}
                                     </label>
+                                    
+                                    {/* Method 1: Roblox Username */}
                                     <div className="flex gap-2 mb-3">
-                                        <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Username..." className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar1()} />
+                                        <input type="text" value={robloxUsername} onChange={(e) => setRobloxUsername(e.target.value)} placeholder="Roblox Username..." className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-neon-blue transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleFetchRobloxAvatar1()} />
                                         <button onClick={handleFetchRobloxAvatar1} disabled={isFetchingAvatar1} className="px-4 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors min-w-[60px]">{isFetchingAvatar1 ? '...' : 'GET'}</button>
                                     </div>
-                                    {avatarData ? (
-                                        <div className="relative h-40 w-full bg-black/50 rounded-xl overflow-hidden border border-white/10 group">
-                                            <img src={avatarData.imageUrl} alt="P1" className="w-full h-full object-contain p-2" />
-                                            <button onClick={() => { setAvatarData(null); setReferenceImage(null); }} className="absolute top-2 right-2 p-2 bg-red-500/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+
+                                    {/* Preview */}
+                                    {referenceImage ? (
+                                        <div className="relative h-40 w-full bg-black/50 rounded-xl overflow-hidden border border-white/10 group mb-3">
+                                            <img src={referenceImage} alt="Ref" className="w-full h-full object-contain p-2" />
+                                            <button onClick={() => { setAvatarData(null); setReferenceImage(null); setCustomImageUrl(''); }} className="absolute top-2 right-2 p-2 bg-red-500/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                                         </div>
                                     ) : (
-                                        <div className="h-40 w-full bg-black/20 rounded-xl border border-white/5 border-dashed flex items-center justify-center text-slate-600 text-xs uppercase font-bold tracking-widest">
+                                        <div className="h-40 w-full bg-black/20 rounded-xl border border-white/5 border-dashed flex items-center justify-center text-slate-600 text-xs uppercase font-bold tracking-widest mb-3">
                                             No Avatar Loaded
                                         </div>
                                     )}
-                                </div>
 
-                                <div className="text-center pt-2">
-                                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                                     <button onClick={() => fileInputRef.current?.click()} className="text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-wider underline decoration-slate-700 underline-offset-4">
-                                         Or Upload Custom .PNG
-                                     </button>
+                                    {/* Method 2 & 3: Upload or URL */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button onClick={() => fileInputRef.current?.click()} className="py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors">
+                                            📁 Upload PNG
+                                        </button>
+                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                                        
+                                        <input 
+                                            type="text" 
+                                            value={customImageUrl} 
+                                            onChange={(e) => setCustomImageUrl(e.target.value)}
+                                            onBlur={handleImageUrlBlur}
+                                            placeholder="Or Paste URL..." 
+                                            className="bg-black border border-white/10 rounded-lg px-3 py-2 text-white text-[10px] outline-none focus:border-neon-blue transition-colors"
+                                        />
+                                    </div>
                                 </div>
                              </div>
                         )}

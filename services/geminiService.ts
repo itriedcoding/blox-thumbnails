@@ -202,7 +202,11 @@ export const generateThumbnail = async (config: ThumbnailConfig): Promise<string
     
     [COMPOSITION]
     ${config.secondReferenceImage ? "- Features TWO avatars interacting dynamically." : "- Focus on the main avatar."}
-    ${config.pose ? `- POSE: ${config.pose}` : "- POSE: Dynamic, Action-oriented"}
+    ${
+        config.pose && config.pose !== 'auto' 
+        ? `- POSE: Force the avatar into a '${config.pose}' pose. Ensure anatomical correctness.` 
+        : `- POSE: AUTO-ADAPTIVE. Analyze the action in the prompt. If fighting, use dynamic combat pose. If running, use sprint pose. If standing, use casual stance. Use exaggerated perspective.`
+    }
     - CAMERA: ${config.aspectRatio === '16:9' ? 'Cinematic Wide Angle' : 'Portrait Focus'}
     
     [STYLE: ${config.style.toUpperCase()}]
