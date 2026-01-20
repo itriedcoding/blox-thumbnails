@@ -13,7 +13,7 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
   const [lightboxImg, setLightboxImg] = useState<GeneratedImage | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [previewMode, setPreviewMode] = useState<'none' | 'youtube' | 'roblox' | 'tiktok'>('none');
-  const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
+  const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg' | 'webp'>('png');
   const [palette, setPalette] = useState<string[]>([]);
   
   const [isRefining, setIsRefining] = useState(false);
@@ -85,10 +85,33 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
   };
 
   const handleDownload = (dataUrl: string, id: string) => {
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = `bloxthumb-${id}.${downloadFormat}`;
-      link.click();
+      // For JPG/WEBP we might need to draw to canvas to convert, but most browsers handle data URI download link fine for PNG/JPG if mimetype matches.
+      // Since our base64 is PNG, if user wants JPG/WEBP we convert.
+      if (downloadFormat !== 'png') {
+          const img = new Image();
+          img.src = dataUrl;
+          img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                  ctx.fillStyle = '#000'; // JPG needs bg
+                  ctx.fillRect(0,0, canvas.width, canvas.height);
+                  ctx.drawImage(img, 0, 0);
+                  const converted = canvas.toDataURL(`image/${downloadFormat}`);
+                  const link = document.createElement('a');
+                  link.href = converted;
+                  link.download = `bloxthumb-${id}.${downloadFormat}`;
+                  link.click();
+              }
+          };
+      } else {
+          const link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = `bloxthumb-${id}.png`;
+          link.click();
+      }
   };
 
   if (images.length === 0) return null;
@@ -106,9 +129,10 @@ export const Gallery: React.FC<GalleryProps> = ({ images, onRemix, onToggleFavor
                 <div className="h-3 w-px bg-white/10"></div>
                 <div className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-bold">
                     Format: 
-                    <select value={downloadFormat} onChange={(e) => setDownloadFormat(e.target.value as any)} className="bg-transparent border-none outline-none text-white cursor-pointer">
+                    <select value={downloadFormat} onChange={(e) => setDownloadFormat(e.target.value as any)} className="bg-transparent border-none outline-none text-white cursor-pointer uppercase">
                         <option value="png">PNG</option>
                         <option value="jpg">JPG</option>
+                        <option value="webp">WEBP</option>
                     </select>
                 </div>
             </div>

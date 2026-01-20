@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GeneratedImage } from '../types';
+import { saveImageToDB } from '../services/storageService';
 
 interface DashboardProps {
   images: GeneratedImage[];
@@ -37,12 +38,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ images, onDelete }) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
           try {
               const imported = JSON.parse(event.target?.result as string);
               if (Array.isArray(imported)) {
-                  alert("Import successful! Refresh page to see changes (in a real app, state would merge).");
-                  localStorage.setItem('bloxthumb_images', JSON.stringify(imported));
+                  // Save all to IndexedDB
+                  await Promise.all(imported.map((img: GeneratedImage) => saveImageToDB(img)));
+                  alert("Import successful! Reloading...");
                   window.location.reload();
               }
           } catch (err) {

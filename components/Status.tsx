@@ -13,11 +13,31 @@ export const Status: React.FC = () => {
     const [activeNodes, setActiveNodes] = useState<number>(0);
 
     useEffect(() => {
-        const update = () => {
+        const update = async () => {
             const nodes = getActiveNodeCount();
             setActiveNodes(nodes);
             
-            const storageUsed = (Object.keys(localStorage).reduce((acc, key) => acc + (localStorage[key].length * 2), 0) / 1024 / 1024).toFixed(2);
+            let storageUsageStr = "0.00";
+            let storageUnit = "MB";
+            let storageStatus: 'optimal' | 'warning' | 'critical' = 'optimal';
+
+            if (navigator.storage && navigator.storage.estimate) {
+                try {
+                    const estimate = await navigator.storage.estimate();
+                    if (estimate.usage) {
+                        const usageMB = estimate.usage / 1024 / 1024;
+                        storageUsageStr = usageMB.toFixed(2);
+                        if (usageMB > 500) storageStatus = 'warning';
+                        if (usageMB > 1000) storageStatus = 'critical';
+                    }
+                } catch (e) {
+                    console.warn("Storage estimate failed", e);
+                }
+            } else {
+                // Fallback estimate based on local storage keys (legacy)
+                const lsUsage = (Object.keys(localStorage).reduce((acc, key) => acc + (localStorage[key].length * 2), 0) / 1024 / 1024);
+                storageUsageStr = lsUsage.toFixed(2);
+            }
 
             setMetrics([
                 {
@@ -32,21 +52,21 @@ export const Status: React.FC = () => {
                     status: nodes > 50 ? 'optimal' : nodes > 0 ? 'warning' : 'critical'
                 },
                 {
-                    name: 'Concurrent Threads',
-                    value: nodes > 1 ? 'UNLIMITED' : '1',
-                    status: nodes > 1 ? 'optimal' : 'warning'
+                    name: 'Storage Database',
+                    value: 'IndexedDB',
+                    status: 'optimal'
                 },
                 {
-                    name: 'Local Storage',
-                    value: storageUsed,
-                    unit: 'MB',
-                    status: parseFloat(storageUsed) < 4 ? 'optimal' : 'warning'
+                    name: 'Disk Usage',
+                    value: storageUsageStr,
+                    unit: storageUnit,
+                    status: storageStatus
                 }
             ]);
         };
         
         update();
-        const interval = setInterval(update, 2000);
+        const interval = setInterval(update, 5000); // Check less frequently as storage estimate can be slow
         return () => clearInterval(interval);
     }, []);
 
@@ -60,7 +80,7 @@ export const Status: React.FC = () => {
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.status === 'optimal' ? 'bg-neon-green' : m.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                         <h3 className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-2">{m.name}</h3>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-mono font-bold text-white">{m.value}</span>
+                            <span className="text-2xl font-mono font-bold text-white truncate">{m.value}</span>
                             {m.unit && <span className="text-xs text-slate-400 mb-1">{m.unit}</span>}
                         </div>
                     </div>
@@ -74,9 +94,9 @@ export const Status: React.FC = () => {
                     <span className="text-white font-bold uppercase tracking-widest">Nano Banana Cluster Log</span>
                 </div>
                 <div className="font-mono text-xs text-slate-400 space-y-2">
-                    <p>{'>'} Initializing Neural Cluster V8.1...</p>
+                    <p>{'>'} Initializing Neural Cluster V12.0...</p>
                     <p>{'>'} Verified {activeNodes} API Keys...</p>
-                    <p className="text-neon-blue">{'>'} Environment Variables: LOADED</p>
+                    <p className="text-neon-blue">{'>'} Storage Engine: IndexedDB (High Capacity)</p>
                     <p>{'>'} Web Search Grounding: Active (Pro Model)</p>
                     <p>{'>'} Failover Protection: Active</p>
                     <p>{'>'} SYSTEM READY</p>

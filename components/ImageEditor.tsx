@@ -49,10 +49,12 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
 
   const [text, setText] = useState('');
   const [textPos, setTextPos] = useState({ x: 50, y: 50 });
+  const [textRotation, setTextRotation] = useState(0);
   const [textColor, setTextColor] = useState('#ffffff');
   const [textGradient, setTextGradient] = useState<TextGradient>('none');
   const [isDraggingText, setIsDraggingText] = useState(false);
   const [textStyle3D, setTextStyle3D] = useState(true);
+  const [textOutline, setTextOutline] = useState(false);
   const [fontSize, setFontSize] = useState(80);
   
   const [stickers, setStickers] = useState<Sticker[]>([]);
@@ -88,7 +90,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [historyStep, history]); // Dependencies needed for undo/redo closure
+  }, [historyStep, history]); 
 
   const saveHistory = useCallback(() => {
       if (!canvasRef.current) return;
@@ -223,6 +225,11 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
       } catch (e) { setIsProcessing(false); alert("BG Gen Failed"); }
   }
 
+  const handleGreenScreen = () => {
+      setBgType('color');
+      setBgColor('#00ff00');
+  }
+
   const handleSave = () => {
       if (!canvasRef.current) return;
       const finalCanvas = document.createElement('canvas');
@@ -259,15 +266,24 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
       if (text) {
           const x = textPos.x / 100 * finalCanvas.width;
           const y = textPos.y / 100 * finalCanvas.height;
+          fCtx.save();
+          fCtx.translate(x, y);
+          fCtx.rotate(textRotation * Math.PI / 180);
           fCtx.font = `900 ${fontSize}px "Outfit", sans-serif`;
           fCtx.textAlign = 'center'; fCtx.textBaseline = 'middle';
           
+          if (textOutline) {
+              fCtx.lineWidth = fontSize / 10;
+              fCtx.strokeStyle = 'black';
+              fCtx.strokeText(text.toUpperCase(), 0, 0);
+          }
+
           if (textStyle3D) {
-            fCtx.fillStyle = '#1a1a1a'; for(let i=1; i<=8; i++) fCtx.fillText(text.toUpperCase(), x+i, y+i);
+            fCtx.fillStyle = '#1a1a1a'; for(let i=1; i<=8; i++) fCtx.fillText(text.toUpperCase(), i, i);
           }
           
           if (textGradient !== 'none') {
-             const grad = fCtx.createLinearGradient(x - fontSize, y, x + fontSize, y);
+             const grad = fCtx.createLinearGradient(-fontSize, 0, fontSize, 0);
              if (textGradient === 'gold') { grad.addColorStop(0, '#FFD700'); grad.addColorStop(0.5, '#FDB931'); grad.addColorStop(1, '#FFD700'); }
              if (textGradient === 'silver') { grad.addColorStop(0, '#C0C0C0'); grad.addColorStop(0.5, '#E0E0E0'); grad.addColorStop(1, '#C0C0C0'); }
              if (textGradient === 'neon-fire') { grad.addColorStop(0, '#ff0000'); grad.addColorStop(0.5, '#ffff00'); grad.addColorStop(1, '#ff0000'); }
@@ -275,9 +291,20 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
           } else {
              fCtx.fillStyle = textColor; 
           }
-          fCtx.fillText(text.toUpperCase(), x, y);
+          fCtx.fillText(text.toUpperCase(), 0, 0);
+          fCtx.restore();
       }
-      stickers.forEach(s => fCtx.fillText(s.content, s.x * finalCanvas.width, s.y * finalCanvas.height));
+      stickers.forEach(s => {
+          fCtx.save();
+          fCtx.translate(s.x * finalCanvas.width, s.y * finalCanvas.height);
+          fCtx.rotate(s.rotation * Math.PI / 180);
+          fCtx.globalAlpha = s.opacity;
+          fCtx.font = `${100 * s.scale}px sans-serif`;
+          fCtx.textAlign = 'center';
+          fCtx.textBaseline = 'middle';
+          fCtx.fillText(s.content, 0, 0);
+          fCtx.restore();
+      });
       onSave(finalCanvas.toDataURL('image/png'));
   };
 
@@ -326,11 +353,12 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                 
                 {text && (
                     <div className="absolute z-20 pointer-events-none" style={{ 
-                        left: `${textPos.x}%`, top: `${textPos.y}%`, transform: 'translate(-50%, -50%)', 
+                        left: `${textPos.x}%`, top: `${textPos.y}%`, transform: `translate(-50%, -50%) rotate(${textRotation}deg)`, 
                         fontSize: `${fontSize*0.5}px`, 
                         color: textGradient === 'none' ? textColor : 'transparent',
                         backgroundImage: textGradient === 'gold' ? 'linear-gradient(to right, #FFD700, #FDB931)' : textGradient === 'neon-fire' ? 'linear-gradient(to right, red, yellow)' : textGradient === 'silver' ? 'linear-gradient(to right, #C0C0C0, #E0E0E0)' : 'none',
                         WebkitBackgroundClip: textGradient !== 'none' ? 'text' : 'border-box',
+                        WebkitTextStroke: textOutline ? `${fontSize*0.01}px black` : 'none',
                         fontWeight: 900, fontFamily: 'Outfit' 
                     }}>
                         {text.toUpperCase()}
@@ -377,7 +405,12 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                             <button onClick={() => setBgType('color')} className={`flex-1 py-2 text-[10px] uppercase border ${bgType === 'color' ? 'bg-white text-black' : 'border-white/10 text-slate-500'}`}>Color</button>
                             <button onClick={() => setBgType('image')} className={`flex-1 py-2 text-[10px] uppercase border ${bgType === 'image' ? 'bg-white text-black' : 'border-white/10 text-slate-500'}`}>AI Gen</button>
                         </div>
-                        {bgType === 'color' && <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-full h-10 rounded cursor-pointer" />}
+                        {bgType === 'color' && (
+                            <div className="space-y-2">
+                                <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-full h-10 rounded cursor-pointer" />
+                                <button onClick={handleGreenScreen} className="w-full py-2 bg-green-500/20 text-green-400 border border-green-500/50 rounded text-[10px] uppercase font-bold">Keying Green</button>
+                            </div>
+                        )}
                         {bgType === 'image' && (
                             <div>
                                 <textarea value={bgPrompt} onChange={(e) => setBgPrompt(e.target.value)} className="w-full bg-black border border-white/10 rounded p-2 text-xs text-white mb-2" placeholder="Describe background..." />
@@ -396,7 +429,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                              {STICKER_CATEGORIES[activeStickerTab].map(s => (
-                                <button key={s.id} onClick={() => setStickers(prev => [...prev, {...s, x:0.5, y:0.5, scale:1}])} className="aspect-square flex items-center justify-center text-xl bg-white/5 rounded-lg hover:bg-white/20 transition-colors">
+                                <button key={s.id} onClick={() => setStickers(prev => [...prev, {...s, x:0.5, y:0.5, scale:1, rotation: 0, opacity: 1}])} className="aspect-square flex items-center justify-center text-xl bg-white/5 rounded-lg hover:bg-white/20 transition-colors">
                                     {s.content}
                                 </button>
                              ))}
@@ -407,8 +440,18 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({ initialImage, onClose,
                 {activeTool === 'text' && (
                     <div className="space-y-4">
                         <input type="text" value={text} onChange={(e) => setText(e.target.value)} className="w-full bg-black border border-white/10 p-2 text-white" placeholder="Text..." />
-                        <input type="range" min="20" max="200" value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="w-full" />
                         
+                        <div>
+                            <label className="text-[9px] text-slate-500 uppercase mb-1 block">Size & Rotation</label>
+                            <input type="range" min="20" max="200" value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="w-full mb-2" />
+                            <input type="range" min="-180" max="180" value={textRotation} onChange={(e) => setTextRotation(Number(e.target.value))} className="w-full" />
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <input type="checkbox" checked={textOutline} onChange={() => setTextOutline(!textOutline)} className="accent-neon-blue" />
+                            <span className="text-xs text-slate-300">Outline</span>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-2">
                              <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-8 rounded" />
                              <select value={textGradient} onChange={(e) => setTextGradient(e.target.value as any)} className="bg-black border border-white/10 text-xs text-white rounded">

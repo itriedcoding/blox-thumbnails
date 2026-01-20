@@ -11,35 +11,43 @@ interface VersionUpdate {
 
 const UPDATES: VersionUpdate[] = [
     {
-        version: "10.0.0",
+        version: "12.0.0",
+        date: "Just Now",
+        isMajor: true,
+        changes: [
+            "ADDED: Hyper-Integration Engine - Fixes 'Floating Avatar' issues using AO & Contact Shadows",
+            "ADDED: Camera Lens Kit - 16mm Fisheye, 35mm Wide, 50mm Portrait, 85mm Cinematic",
+            "ADDED: Color Grading - Matrix, Noir, Vibrant, Vintage presets",
+            "ADDED: Advanced Physics - Control Shadow Softness, Reflection Strength, and Surface Dirt",
+            "ADDED: Global Illumination - Realistic bounce lighting from scene to character",
+            "ADDED: Light Leaks & Atmosphere - Cinematic post-processing overlay support",
+            "IMPROVED: Prompt Logic - Split Scene/Subject logic for better depth perception"
+        ]
+    },
+    {
+        version: "11.0.0",
         date: "Today",
+        isMajor: true,
+        changes: [
+            "ADDED: Material Shader System (Neon, Glass, ForceField, Slate, etc.)",
+            "ADDED: Time & Weather Engine (Fog, Rain, Sandstorm, Noon, Midnight)",
+            "ADDED: Chaos Slider - Control AI Temperature/Creativity",
+            "ADDED: Game URL Scanner - Extract style from Roblox game links",
+            "ADDED: Legacy Avatars - One-click Noob, Guest, Bacon presets",
+            "ADDED: Performance Mode - Toggle for low-end devices",
+            "IMPROVED: Editor - Added Text Stroke, Rotation, Green Screen Generator",
+            "IMPROVED: Pin History - Save your best prompts"
+        ]
+    },
+    {
+        version: "10.0.0",
+        date: "Yesterday",
         isMajor: true,
         changes: [
             "REMOVED: Generic 'Toy' Textures - Now using authentic Roblox Studio material definitions (SmoothPlastic, Neon, Slate)",
             "IMPROVED: R6/R15 Fidelity - Neural Engine now strictly enforces 6-joint or 15-joint geometry constraints",
             "ADDED: Material Shader System - Prompts now explicitly call for Roblox-specific material shaders",
             "FIXED: Organic Curves - Eliminated unwanted 'human-like' roundness in blocky avatars"
-        ]
-    },
-    {
-        version: "9.5.0",
-        date: "Yesterday",
-        isMajor: true,
-        changes: [
-            "ADDED: Generative Edit - AI-powered 'Magic Edit' tool in the image editor",
-            "ADDED: Smart Avatar Sync - Dedicated Roblox Username input for higher fidelity character matching",
-            "IMPROVED: Editor UI - New toolbar layout with Stickers, Backgrounds, and Text gradients",
-            "ADDED: Atmosphere Overlays - Rain, Snow, and Safe Zone guides"
-        ]
-    },
-    {
-        version: "8.8.0",
-        date: "Previous",
-        isMajor: false,
-        changes: [
-            "ADDED: Particle FX System - Inject 3D particles directly into renders (Sparkles, Money, Fire, Glitch)",
-            "REWORKED: High-CTR Engine V3 - Now optimized purely for Roblox Discovery Algorithm",
-            "IMPROVED: Viral Element Injector - Replaced text spam with visual motifs (Floating Pets, Speed Trails)"
         ]
     }
 ];

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateThumbnail, enhancePrompt, generateRandomPrompt, getActiveNodeCount, expandPrompt } from '../services/geminiService';
-import { getRobloxAvatar } from '../services/robloxService';
-import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect, AspectRatio, RenderEngine, Composition } from '../types';
+import { getRobloxAvatar, getGameDetailsFromUrl } from '../services/robloxService';
+import { ThumbnailStyle, ModelType, RobloxAvatar, AvatarModel, ThumbnailConfig, PromptTemplate, FaceExpression, LightingPreset, ParticleEffect, AspectRatio, RenderEngine, Composition, RobloxMaterial, TimeOfDay, Weather, CameraLens, ColorGrading, RenderPhysics } from '../types';
 import { ImageEditor } from './ImageEditor';
 import { playSound } from '../App';
 
@@ -12,8 +12,39 @@ interface ThumbnailGeneratorProps {
 
 const NEGATIVE_PRESETS = [
     { label: "Anti-Realism (Strict)", value: "photorealistic, real life, human skin, veins, realistic eyes, vlog, youtube face, camera, human hands, flesh" },
+    { label: "Anti-Organic (Blocky)", value: "organic curves, soft shapes, roundness, anime, 2d, illustration, sketch" },
     { label: "Standard Clean", value: "low quality, blurry, watermark, text, bad anatomy, deformed, plastic, toy, dark, muted, boring" },
-    { label: "2D Reject", value: "drawing, sketch, painting, cartoon, anime, illustration, flat, cel shaded" },
+];
+
+const MATERIALS: {id: RobloxMaterial, label: string, color: string}[] = [
+    {id:'auto', label:'✨ Auto', color:'bg-slate-500'},
+    {id:'Plastic', label:'Plastic', color:'bg-slate-400'},
+    {id:'Neon', label:'Neon', color:'bg-neon-blue'},
+    {id:'Slate', label:'Slate', color:'bg-stone-500'},
+    {id:'Glass', label:'Glass', color:'bg-blue-300'},
+    {id:'ForceField', label:'ForceField', color:'bg-purple-500'},
+    {id:'CorrodedMetal', label:'Rust', color:'bg-orange-700'},
+    {id:'Ice', label:'Ice', color:'bg-cyan-200'}
+];
+
+const WEATHER: {id: Weather, icon: string}[] = [
+    {id:'auto', icon:'✨'}, {id:'Clear', icon:'☀️'}, {id:'Rain', icon:'🌧️'}, 
+    {id:'Snow', icon:'❄️'}, {id:'Fog', icon:'🌫️'}, {id:'Sandstorm', icon:'🏜️'}
+];
+
+const TIME: {id: TimeOfDay, icon: string}[] = [
+    {id:'auto', icon:'✨'}, {id:'Sunrise', icon:'🌅'}, {id:'Noon', icon:'☀️'}, 
+    {id:'Sunset', icon:'🌇'}, {id:'Midnight', icon:'🌑'}
+];
+
+const LENSES: {id: CameraLens, label: string}[] = [
+    {id:'auto', label:'✨ Auto'}, {id:'16mm', label:'16mm Fisheye'}, {id:'35mm', label:'35mm Wide'}, 
+    {id:'50mm', label:'50mm Portrait'}, {id:'85mm', label:'85mm Cine'}, {id:'200mm', label:'200mm Zoom'}
+];
+
+const GRADING: {id: ColorGrading, label: string}[] = [
+    {id:'none', label:'Standard'}, {id:'vibrant', label:'Vibrant'}, {id:'noir', label:'Noir'}, 
+    {id:'matrix', label:'Matrix'}, {id:'vintage', label:'Vintage'}, {id:'teal-orange', label:'Teal/Orange'}
 ];
 
 const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
@@ -26,7 +57,7 @@ const HIGH_CTR_TEMPLATES: PromptTemplate[] = [
 ];
 
 const POSES = [
-    { id: 'auto', label: '🧠 AI Auto', icon: '✨' },
+    { id: 'auto', label: 'AI Auto', icon: '✨' },
     { id: 'standing', label: 'Idle', icon: '🧍' },
     { id: 'fighting_stance', label: 'Combat', icon: '🥊' },
     { id: 'running', label: 'Run', icon: '🏃' },
@@ -54,27 +85,19 @@ const LIGHTING = [
     { id: 'god-rays', label: 'God Rays' },
 ];
 
-const PARTICLES: {id: ParticleEffect, label: string}[] = [
-    { id: 'auto', label: '✨ AI Auto' },
-    { id: 'none', label: 'None' },
-    { id: 'sparkles', label: '✨ Sparkles' },
-    { id: 'fire', label: '🔥 Fire' },
-    { id: 'money', label: '💸 Money' },
-    { id: 'glitch', label: '👾 Glitch' },
-    { id: 'lightning', label: '⚡ Lightning' },
-    { id: 'pet-trail', label: '🐾 Pet Trail' },
-];
-
 export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageGenerated, remixConfig }) => {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(NEGATIVE_PRESETS[0].value);
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [pinnedHistory, setPinnedHistory] = useState<string[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [robloxUsername, setRobloxUsername] = useState('');
+  const [gameUrl, setGameUrl] = useState('');
   
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
+  const [showSeed, setShowSeed] = useState(false);
   const [batchSize, setBatchSize] = useState<number>(1);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -92,11 +115,30 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   const [lighting, setLighting] = useState<LightingPreset>('auto');
   const [particles, setParticles] = useState<ParticleEffect>('auto');
 
+  // New Advanced States
+  const [material, setMaterial] = useState<RobloxMaterial>('auto');
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('auto');
+  const [weather, setWeather] = useState<Weather>('auto');
+  const [chaos, setChaos] = useState(30);
+  const [performanceMode, setPerformanceMode] = useState(false);
+
+  // v12.0 New States
+  const [cameraLens, setCameraLens] = useState<CameraLens>('auto');
+  const [colorGrading, setColorGrading] = useState<ColorGrading>('none');
+  const [renderPhysics, setRenderPhysics] = useState<RenderPhysics>({
+      shadowSoftness: 50,
+      reflectionStrength: 50,
+      dirtAndScratches: 10,
+      globalIllumination: true
+  });
+  const [showAdvancedPhysics, setShowAdvancedPhysics] = useState(false);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0); 
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isExpanding, setIsExpanding] = useState(false);
   const [isFetchingAvatar1, setIsFetchingAvatar1] = useState(false);
+  const [isFetchingGame, setIsFetchingGame] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editorImage, setEditorImage] = useState<string | null>(null);
 
@@ -114,6 +156,13 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
           setExpression(remixConfig.expression || 'auto');
           setLighting(remixConfig.lighting || 'auto');
           setParticles(remixConfig.particles || 'auto');
+          setMaterial(remixConfig.material);
+          setTimeOfDay(remixConfig.timeOfDay);
+          setWeather(remixConfig.weather);
+          setChaos(remixConfig.chaos);
+          setCameraLens(remixConfig.cameraLens);
+          setColorGrading(remixConfig.colorGrading);
+          setRenderPhysics(remixConfig.renderPhysics);
           if (remixConfig.seed) setSeed(remixConfig.seed);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           playSound('blip');
@@ -121,12 +170,27 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       
       const savedHistory = localStorage.getItem('bloxthumb_prompt_history');
       if (savedHistory) setPromptHistory(JSON.parse(savedHistory));
+      const savedPins = localStorage.getItem('bloxthumb_pinned_history');
+      if (savedPins) setPinnedHistory(JSON.parse(savedPins));
   }, [remixConfig]);
 
   const addToHistory = (p: string) => {
-      const newHistory = [p, ...promptHistory.filter(x => x !== p)].slice(0, 10);
+      if (promptHistory.includes(p)) return;
+      const newHistory = [p, ...promptHistory].slice(0, 15);
       setPromptHistory(newHistory);
       localStorage.setItem('bloxthumb_prompt_history', JSON.stringify(newHistory));
+  };
+
+  const togglePin = (p: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      let newPins;
+      if (pinnedHistory.includes(p)) {
+          newPins = pinnedHistory.filter(pin => pin !== p);
+      } else {
+          newPins = [p, ...pinnedHistory];
+      }
+      setPinnedHistory(newPins);
+      localStorage.setItem('bloxthumb_pinned_history', JSON.stringify(newPins));
   };
 
   const handleRandomize = async () => {
@@ -172,6 +236,21 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
       }
   }
 
+  const fetchGameInfo = async () => {
+      if (!gameUrl.trim()) return;
+      playSound('blip');
+      setIsFetchingGame(true);
+      setError(null);
+      try {
+          const game = await getGameDetailsFromUrl(gameUrl);
+          setPrompt((prev) => `${prev} based on Roblox game: "${game.name}". Style: ${game.description.slice(0, 100)}...`);
+      } catch (err: any) {
+          setError(`Game Fetch Error: ${err.message}`);
+      } finally {
+          setIsFetchingGame(false);
+      }
+  };
+
   const handleEnhancePrompt = async () => {
     if (!prompt.trim()) return;
     setIsEnhancing(true);
@@ -211,7 +290,8 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                 negativePrompt, 
                 referenceImage: referenceImage || undefined,
                 aspectRatio, style, model, avatarModel, pose, expression, lighting, particles,
-                renderEngine, composition,
+                renderEngine, composition, material, timeOfDay, weather, chaos,
+                cameraLens, colorGrading, renderPhysics,
                 seed: currentSeed 
             };
             return generateThumbnail(config).then(data => ({ data, seed: currentSeed }));
@@ -239,9 +319,16 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
   };
 
   return (
-    <div className="w-full relative">
+    <div className={`w-full relative ${performanceMode ? '' : 'transition-colors duration-500'}`}>
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             <div className="xl:col-span-8 bg-[#08080c]/80 backdrop-blur-3xl border border-white/5 rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                {/* Performance Toggle */}
+                <div className="absolute top-4 right-4 z-20">
+                    <button onClick={() => setPerformanceMode(!performanceMode)} className={`text-[9px] font-bold uppercase px-3 py-1 rounded border ${performanceMode ? 'bg-green-500/20 text-green-400 border-green-500' : 'bg-white/5 text-slate-500 border-white/10'}`}>
+                        {performanceMode ? '⚡ Eco Mode On' : '🚀 Performance'}
+                    </button>
+                </div>
+
                 {/* Prompt Section */}
                 <div className="relative mb-8 group/prompt">
                     <div className="relative bg-[#020204] rounded-2xl p-1.5 ring-1 ring-white/10 focus-within:ring-neon-blue/50 transition-all shadow-inner">
@@ -254,16 +341,23 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         />
                         
                         {/* Prompt History Dropdown */}
-                        {showHistory && promptHistory.length > 0 && (
-                            <div className="absolute top-[100%] left-0 right-0 z-50 bg-[#0f0f12] border border-white/10 rounded-b-xl shadow-2xl max-h-40 overflow-y-auto">
+                        {showHistory && (pinnedHistory.length > 0 || promptHistory.length > 0) && (
+                            <div className="absolute top-[100%] left-0 right-0 z-50 bg-[#0f0f12] border border-white/10 rounded-b-xl shadow-2xl max-h-60 overflow-y-auto">
                                 <div className="flex justify-between px-4 py-2 bg-white/5 text-[9px] uppercase font-bold text-slate-500">
                                     <span>Recent Prompts</span>
                                     <button onClick={() => setShowHistory(false)}>Close</button>
                                 </div>
+                                {pinnedHistory.map((p, i) => (
+                                    <div key={`pin-${i}`} onClick={() => { setPrompt(p); setShowHistory(false); }} className="w-full text-left px-4 py-3 text-xs text-yellow-300 bg-yellow-500/10 border-b border-white/5 truncate flex justify-between cursor-pointer hover:bg-yellow-500/20">
+                                        <span className="truncate">{p}</span>
+                                        <button onClick={(e) => togglePin(p, e)}>📌</button>
+                                    </div>
+                                ))}
                                 {promptHistory.map((p, i) => (
-                                    <button key={i} onClick={() => { setPrompt(p); setShowHistory(false); }} className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-white/10 border-b border-white/5 truncate">
-                                        {p}
-                                    </button>
+                                    <div key={i} onClick={() => { setPrompt(p); setShowHistory(false); }} className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-white/10 border-b border-white/5 truncate flex justify-between cursor-pointer">
+                                        <span className="truncate">{p}</span>
+                                        <button onClick={(e) => togglePin(p, e)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-white">📌</button>
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -284,6 +378,87 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                     </div>
                 </div>
 
+                {/* ADVANCED ROBLOX CONTROLS */}
+                <div className="mb-8 p-6 bg-white/5 rounded-xl border border-white/5">
+                     <div className="flex justify-between items-center mb-4">
+                         <h4 className="text-xs font-bold text-white uppercase tracking-widest">Environment & Physics</h4>
+                         <div className="flex items-center gap-4">
+                             <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-slate-400 uppercase">Chaos</span>
+                                <input type="range" min="0" max="100" value={chaos} onChange={(e) => setChaos(Number(e.target.value))} className="w-20 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-neon-blue" />
+                             </div>
+                             <button onClick={() => setShowAdvancedPhysics(!showAdvancedPhysics)} className={`text-[9px] uppercase font-bold px-3 py-1 rounded border ${showAdvancedPhysics ? 'bg-neon-blue text-black border-neon-blue' : 'bg-transparent border-white/10 text-slate-500'}`}>Advanced Physics</button>
+                         </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         {/* Materials */}
+                         <div>
+                             <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Primary Material</label>
+                             <div className="grid grid-cols-2 gap-1.5">
+                                 {MATERIALS.map(m => (
+                                     <button key={m.id} onClick={() => setMaterial(m.id)} className={`text-[9px] px-2 py-1.5 rounded border transition-all ${material === m.id ? `${m.color} text-white border-transparent` : 'bg-transparent border-white/10 text-slate-400 hover:text-white'}`}>
+                                         {m.label}
+                                     </button>
+                                 ))}
+                             </div>
+                         </div>
+                         {/* Time & Weather */}
+                         <div className="space-y-4">
+                             <div>
+                                <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Time of Day</label>
+                                <div className="flex gap-1">
+                                    {TIME.map(t => (
+                                        <button key={t.id} onClick={() => setTimeOfDay(t.id)} className={`flex-1 py-1 rounded border text-lg ${timeOfDay === t.id ? 'bg-white/20 border-white text-white' : 'border-white/5 text-slate-600'}`}>{t.icon}</button>
+                                    ))}
+                                </div>
+                             </div>
+                             <div>
+                                <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Weather</label>
+                                <div className="flex gap-1">
+                                    {WEATHER.map(w => (
+                                        <button key={w.id} onClick={() => setWeather(w.id)} className={`flex-1 py-1 rounded border text-lg ${weather === w.id ? 'bg-white/20 border-white text-white' : 'border-white/5 text-slate-600'}`}>{w.icon}</button>
+                                    ))}
+                                </div>
+                             </div>
+                         </div>
+                         {/* Camera & Color */}
+                         <div className="space-y-4">
+                            <div>
+                                <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Lens & Grading</label>
+                                <select value={cameraLens} onChange={(e) => setCameraLens(e.target.value as any)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold uppercase text-slate-300 outline-none mb-2">
+                                    {LENSES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+                                </select>
+                                <select value={colorGrading} onChange={(e) => setColorGrading(e.target.value as any)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold uppercase text-slate-300 outline-none">
+                                    {GRADING.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                                </select>
+                            </div>
+                         </div>
+                     </div>
+
+                     {/* Physics Panel */}
+                     {showAdvancedPhysics && (
+                         <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up">
+                            <div>
+                                <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Shadow Softness</label>
+                                <input type="range" min="0" max="100" value={renderPhysics.shadowSoftness} onChange={(e) => setRenderPhysics({...renderPhysics, shadowSoftness: Number(e.target.value)})} className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-neon-blue" />
+                            </div>
+                            <div>
+                                <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Reflections</label>
+                                <input type="range" min="0" max="100" value={renderPhysics.reflectionStrength} onChange={(e) => setRenderPhysics({...renderPhysics, reflectionStrength: Number(e.target.value)})} className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-neon-blue" />
+                            </div>
+                            <div>
+                                <label className="text-[9px] text-slate-500 uppercase font-bold mb-2 block">Dirt & Scratches</label>
+                                <input type="range" min="0" max="100" value={renderPhysics.dirtAndScratches} onChange={(e) => setRenderPhysics({...renderPhysics, dirtAndScratches: Number(e.target.value)})} className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-neon-blue" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input type="checkbox" checked={renderPhysics.globalIllumination} onChange={() => setRenderPhysics({...renderPhysics, globalIllumination: !renderPhysics.globalIllumination})} className="w-4 h-4 accent-neon-blue" />
+                                <label className="text-[9px] text-slate-500 uppercase font-bold">Global Illumination</label>
+                            </div>
+                         </div>
+                     )}
+                </div>
+
                 {/* GAME GENRE & ENGINE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                     <div>
@@ -298,15 +473,15 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                          <div>
                             <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Render Engine</label>
                             <div className="flex gap-2 bg-black/30 p-1 rounded-xl border border-white/5">
-                                {[{id:'cycles', l:'Blender Cycles'}, {id:'studio', l:'Roblox Studio'}, {id:'c4d', l:'Cinema 4D'}].map(e => (
+                                {[{id:'cycles', l:'Cycles'}, {id:'studio', l:'Studio'}, {id:'c4d', l:'C4D'}].map(e => (
                                     <button key={e.id} onClick={() => setRenderEngine(e.id as any)} className={`flex-1 py-2 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${renderEngine === e.id ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}>{e.l}</button>
                                 ))}
                             </div>
                          </div>
                          <div>
-                             <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Composition (Camera)</label>
+                             <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-4 block">Composition</label>
                              <div className="flex gap-2 bg-black/30 p-1 rounded-xl border border-white/5 overflow-x-auto">
-                                {[{id:'auto', l:'Auto'}, {id:'wide-action', l:'Wide Action'}, {id:'closeup', l:'Face Icon'}, {id:'isometric', l:'Isometric'}, {id:'vs-mode', l:'Vs Mode'}].map(c => (
+                                {[{id:'auto', l:'Auto'}, {id:'wide-action', l:'Wide'}, {id:'closeup', l:'Face'}, {id:'isometric', l:'Iso'}, {id:'vs-mode', l:'Vs'}].map(c => (
                                     <button key={c.id} onClick={() => setComposition(c.id as any)} className={`flex-1 py-2 px-3 whitespace-nowrap rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all ${composition === c.id ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}>{c.l}</button>
                                 ))}
                              </div>
@@ -349,7 +524,7 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                         {/* New Particles Selector */}
                         <div className="relative group">
                             <select value={particles} onChange={(e) => setParticles(e.target.value as any)} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold uppercase text-slate-300 outline-none">
-                                {PARTICLES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                                {[{id:'auto', label:'✨ Particles: Auto'}, {id:'none', label:'None'}, {id:'sparkles', label:'Sparkles'}, {id:'fire', label:'Fire'}, {id:'money', label:'Money'}, {id:'glitch', label:'Glitch'}, {id:'lightning', label:'Lightning'}].map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                             </select>
                         </div>
                      </div>
@@ -381,14 +556,23 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                      <div className="absolute top-0 right-0 w-32 h-32 bg-neon-blue/10 rounded-full blur-3xl group-hover:bg-neon-blue/20 transition-all"></div>
                      
                      <div className="relative z-10">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Avatar Source</h3>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Character Source</h3>
                         <p className="text-xs text-slate-400 mb-6">Load your Roblox character for maximum consistency.</p>
                         
+                        {/* LEGACY PRESETS */}
+                        <div className="grid grid-cols-3 gap-2 mb-6">
+                            {[{id:'Noob', l:'Noob'}, {id:'Guest', l:'Guest'}, {id:'Bacon', l:'Bacon'}].map(a => (
+                                <button key={a.id} onClick={() => setAvatarModel(a.id as any)} className={`py-2 rounded text-[10px] uppercase font-bold border transition-all ${avatarModel === a.id ? 'bg-white text-black border-white' : 'bg-black/40 border-white/10 text-slate-500 hover:text-white'}`}>
+                                    {a.l}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-bold uppercase text-neon-blue tracking-widest flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-pulse"></span>
-                                    Roblox Username (Recommended)
+                                    Roblox Username
                                 </label>
                                 <div className="flex gap-2">
                                     <input 
@@ -407,9 +591,29 @@ export const ThumbnailGenerator: React.FC<ThumbnailGeneratorProps> = ({ onImageG
                                         {isFetchingAvatar1 ? '...' : 'LOAD'}
                                     </button>
                                 </div>
-                                <p className="text-[9px] text-slate-600">
-                                    Fetches latest avatar appearance from Roblox API.
-                                </p>
+                            </div>
+
+                             <div className="space-y-2">
+                                <label className="text-[9px] font-bold uppercase text-purple-400 tracking-widest flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                                    Analyze Game Style
+                                </label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={gameUrl} 
+                                        onChange={(e) => setGameUrl(e.target.value)} 
+                                        placeholder="Paste Roblox Game URL..." 
+                                        className="flex-1 bg-black border border-white/10 rounded-lg px-4 py-3 text-xs text-white outline-none focus:border-purple-500/50 transition-all" 
+                                    />
+                                    <button 
+                                        onClick={fetchGameInfo} 
+                                        disabled={isFetchingGame} 
+                                        className="px-4 bg-white/10 rounded-lg text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors border border-white/5"
+                                    >
+                                        {isFetchingGame ? '...' : 'SCAN'}
+                                    </button>
+                                </div>
                             </div>
                             
                             <div className="space-y-2 pt-4 border-t border-white/5">

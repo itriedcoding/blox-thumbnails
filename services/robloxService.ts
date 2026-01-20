@@ -29,6 +29,41 @@ const fetchWithRetries = async (targetUrl: string): Promise<any> => {
     throw lastError || new Error("All proxies failed");
 };
 
+export const getGameDetailsFromUrl = async (url: string): Promise<RobloxGame> => {
+    // Extract ID from URL like https://www.roblox.com/games/123456/Game-Name
+    const match = url.match(/\/games\/(\d+)\//);
+    if (!match) throw new Error("Invalid Roblox Game URL");
+    const placeId = match[1];
+
+    // Get Universe ID
+    const universeUrl = `https://apis.roblox.com/universes/v1/places/${placeId}/universe`;
+    const universeData = await fetchWithRetries(universeUrl);
+    const universeId = universeData.universeId;
+
+    // Get Game Details
+    const detailsUrl = `https://games.roblox.com/v1/games?universeIds=${universeId}`;
+    const detailsData = await fetchWithRetries(detailsUrl);
+    const game = detailsData.data[0];
+
+    // Get Thumbnail
+    const thumbUrl = `https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeId}&returnPolicy=PlaceHolder&size=512x512&format=Png&isCircular=false`;
+    const thumbData = await fetchWithRetries(thumbUrl);
+    const thumb = thumbData.data[0]?.imageUrl;
+
+    return {
+        id: universeId,
+        rootPlaceId: parseInt(placeId),
+        name: game.name,
+        description: game.description,
+        playerCount: game.playing,
+        visits: game.visits,
+        creatorName: game.creator.name,
+        thumbnailUrl: thumb,
+        upVotes: 0,
+        downVotes: 0
+    };
+};
+
 export const getRobloxAvatar = async (username: string, model: AvatarModel): Promise<RobloxAvatar> => {
   try {
     // 1. Get User ID - Switch to GET search to avoid POST proxy issues

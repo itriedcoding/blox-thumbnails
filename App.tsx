@@ -9,6 +9,7 @@ import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
 import { sendToDiscord } from './services/discordService';
+import { getImagesFromDB, saveImageToDB, deleteImageFromDB } from './services/storageService';
 
 let audioEnabled = true;
 
@@ -54,28 +55,43 @@ function App() {
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [remixConfig, setRemixConfig] = useState<ThumbnailConfig | null>(null);
 
+  // Initialize Data: Migrate LocalStorage -> IndexedDB if needed, then Load DB
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('bloxthumb_images');
-      if (saved) {
-        setGeneratedImages(JSON.parse(saved));
-      }
-      const savedAudio = localStorage.getItem('bloxthumb_audio');
-      if (savedAudio !== null) audioEnabled = savedAudio === 'true';
-    } catch (e) {
-      console.error("Failed to load history", e);
-    }
+    const initData = async () => {
+        try {
+            // 1. Check for legacy localStorage data
+            const legacyData = localStorage.getItem('bloxthumb_images');
+            if (legacyData) {
+                try {
+                    const parsed = JSON.parse(legacyData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        console.log("Migrating legacy images to IndexedDB...");
+                        await Promise.all(parsed.map(img => saveImageToDB(img)));
+                        localStorage.removeItem('bloxthumb_images'); // Free up localStorage
+                        console.log("Migration complete.");
+                    }
+                } catch (e) {
+                    console.error("Migration failed", e);
+                }
+            }
+
+            // 2. Load from IndexedDB
+            const dbImages = await getImagesFromDB();
+            setGeneratedImages(dbImages);
+
+            // 3. Load Audio Pref
+            const savedAudio = localStorage.getItem('bloxthumb_audio');
+            if (savedAudio !== null) audioEnabled = savedAudio === 'true';
+
+        } catch (e) {
+            console.error("Failed to initialize data", e);
+        }
+    };
+
+    initData();
   }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('bloxthumb_images', JSON.stringify(generatedImages));
-    } catch (e) {
-      console.error("Failed to save history", e);
-    }
-  }, [generatedImages]);
-
-  const handleImageGenerated = (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, pose?: string, negativePrompt?: string, seed?: number) => {
+  const handleImageGenerated = async (imageData: string, prompt: string, style: ThumbnailStyle, model: ModelType, avatarModel: AvatarModel, pose?: string, negativePrompt?: string, seed?: number) => {
     const newImage: GeneratedImage = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
       data: imageData,
@@ -89,20 +105,37 @@ function App() {
       seed,
       isFavorite: false
     };
+    
+    // Update State
     setGeneratedImages((prev) => [newImage, ...prev]);
+    
+    // Save to DB
+    saveImageToDB(newImage).catch(e => console.error("Failed to save image to DB", e));
 
     // Automatically send to Discord Webhook
     sendToDiscord(imageData, prompt, model, style);
   };
 
-  const handleDeleteImage = (id: string) => {
+  const handleDeleteImage = async (id: string) => {
     setGeneratedImages((prev) => prev.filter(img => img.id !== id));
+    deleteImageFromDB(id).catch(e => console.error("Failed to delete from DB", e));
   };
 
-  const handleToggleFavorite = (id: string) => {
-      setGeneratedImages((prev) => prev.map(img => 
-          img.id === id ? { ...img, isFavorite: !img.isFavorite } : img
-      ));
+  const handleToggleFavorite = async (id: string) => {
+      let updatedImage: GeneratedImage | undefined;
+      
+      setGeneratedImages((prev) => prev.map(img => {
+          if (img.id === id) {
+              updatedImage = { ...img, isFavorite: !img.isFavorite };
+              return updatedImage;
+          }
+          return img;
+      }));
+
+      if (updatedImage) {
+          saveImageToDB(updatedImage).catch(e => console.error("Failed to update favorite in DB", e));
+      }
+      
       playSound('blip');
   };
 
@@ -115,7 +148,21 @@ function App() {
           avatarModel: img.avatarModel,
           pose: img.pose,
           seed: img.seed,
-          aspectRatio: "16:9" 
+          aspectRatio: "16:9",
+          referenceImage: undefined,
+          secondReferenceImage: undefined,
+          renderEngine: img.renderEngine || 'cycles',
+          composition: img.composition || 'auto',
+          expression: img.expression || 'auto',
+          lighting: img.lighting || 'auto',
+          particles: img.particles || 'auto',
+          material: img.material || 'auto',
+          timeOfDay: img.timeOfDay || 'auto',
+          weather: img.weather || 'auto',
+          cameraLens: img.cameraLens || 'auto',
+          colorGrading: img.colorGrading || 'none',
+          renderPhysics: { shadowSoftness: 50, reflectionStrength: 50, dirtAndScratches: 10, globalIllumination: true },
+          chaos: img.chaos || 30
       });
       setCurrentView('generator');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -146,7 +193,7 @@ function App() {
                          <div className="text-center mb-16 relative">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
                                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                <span className="text-[10px] font-bold text-slate-300 tracking-[0.2em] uppercase">Engine V8.5 Advanced</span>
+                                <span className="text-[10px] font-bold text-slate-300 tracking-[0.2em] uppercase">Engine V12.0 Hyper</span>
                             </div>
                             
                             <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter uppercase drop-shadow-2xl">
