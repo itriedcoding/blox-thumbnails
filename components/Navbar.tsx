@@ -18,7 +18,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
   const navItems: { id: ViewType; label: string; icon?: string }[] = [
     { id: 'home', label: 'Overview' },
     { id: 'generator', label: 'Studio' },
-    { id: 'top-games', label: 'Top 100' },
     { id: 'dashboard', label: 'Gallery' },
   ];
 

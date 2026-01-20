@@ -24,7 +24,8 @@ export const TopGames: React.FC = () => {
 
     const filteredGames = games.filter(g => 
         g.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        g.creatorName.toLowerCase().includes(searchTerm.toLowerCase())
+        g.creatorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        g.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const formatNumber = (num: number) => {
@@ -41,12 +42,15 @@ export const TopGames: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-white/5 pb-8 gap-6">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Live Roblox Data</span>
+                         <div className="w-2 h-2 rounded-full bg-neon-blue animate-pulse"></div>
+                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Real-Time Discovery API</span>
                     </div>
                     <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">
-                        Global <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-white">Top 100</span>
+                        Roblox <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-white">Discovery</span>
                     </h2>
+                    <p className="text-slate-400 text-sm mt-2 max-w-lg font-light">
+                        Explore trending experiences and analyze their thumbnails directly from the official Roblox API.
+                    </p>
                 </div>
                 
                 <div className="w-full md:w-auto relative group">
@@ -64,30 +68,26 @@ export const TopGames: React.FC = () => {
             </div>
 
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                     {Array.from({ length: 10 }).map((_, i) => (
-                        <div key={i} className="bg-[#0a0a10] rounded-2xl h-[320px] animate-pulse border border-white/5"></div>
+                        <div key={i} className="bg-[#0a0a10] rounded-2xl h-[380px] animate-pulse border border-white/5"></div>
                     ))}
                 </div>
             ) : error ? (
                 <div className="text-center py-20 bg-red-500/5 rounded-3xl border border-red-500/10">
                     <p className="text-red-400 font-bold uppercase">{error}</p>
+                    <button onClick={() => window.location.reload()} className="mt-4 px-6 py-2 bg-red-500/20 hover:bg-red-500 hover:text-white rounded-lg text-xs font-bold uppercase transition-all">Retry Connection</button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                    {filteredGames.map((game, index) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                    {filteredGames.map((game) => (
                         <a 
                             key={game.id} 
                             href={`https://www.roblox.com/games/${game.rootPlaceId}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="group relative bg-[#0a0a10] border border-white/10 rounded-2xl overflow-hidden hover:border-neon-blue/50 hover:shadow-[0_0_30px_-5px_rgba(0,243,255,0.1)] transition-all duration-300 hover:-translate-y-1"
+                            className="group relative bg-[#0a0a10] border border-white/10 rounded-2xl overflow-hidden hover:border-neon-blue/50 hover:shadow-[0_0_30px_-5px_rgba(0,243,255,0.1)] transition-all duration-300 hover:-translate-y-1 flex flex-col h-full"
                         >
-                            {/* Rank Badge */}
-                            <div className="absolute top-3 left-3 z-10 bg-black/80 backdrop-blur-md border border-white/10 w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold text-white font-mono shadow-lg">
-                                #{index + 1}
-                            </div>
-
                             {/* Image */}
                             <div className="aspect-square w-full overflow-hidden bg-black/50 relative">
                                 {game.thumbnailUrl ? (
@@ -95,37 +95,38 @@ export const TopGames: React.FC = () => {
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-slate-700">No Image</div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                                 
-                                <div className="absolute bottom-3 left-3 right-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="w-2 h-2 rounded-full bg-neon-green"></span>
-                                        <span className="text-xs font-bold text-neon-green shadow-black drop-shadow-md">{formatNumber(game.playerCount)} Playing</span>
-                                    </div>
+                                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
+                                    {formatNumber(game.playerCount)} Playing
                                 </div>
                             </div>
 
                             {/* Details */}
-                            <div className="p-4">
+                            <div className="p-5 flex-1 flex flex-col">
                                 <h3 className="text-white font-bold text-lg mb-1 line-clamp-1 group-hover:text-neon-blue transition-colors">{game.name}</h3>
-                                <p className="text-slate-500 text-xs mb-4 flex items-center gap-1">
-                                    by <span className="text-slate-300 font-medium">{game.creatorName}</span>
+                                <p className="text-slate-500 text-xs mb-3 flex items-center gap-1">
+                                    by <span className="text-slate-300 font-medium hover:underline">{game.creatorName}</span>
                                 </p>
                                 
-                                <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-3">
-                                    <div>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Visits</p>
-                                        <p className="text-xs text-white font-mono">{formatNumber(game.visits)}</p>
+                                <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-3 mb-4 flex-1">
+                                    {game.description || "No description available for this experience."}
+                                </p>
+                                
+                                <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-3 mt-auto">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Visits</span>
+                                        <span className="text-xs text-white font-mono">{formatNumber(game.visits)}</span>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Rating</p>
-                                        <p className="text-xs text-white font-mono flex items-center justify-end gap-1">
+                                    <div className="flex flex-col text-right">
+                                        <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Rating</span>
+                                        <span className="text-xs text-white font-mono flex items-center justify-end gap-1">
                                             <span className="text-yellow-400">★</span>
                                             {game.upVotes + game.downVotes > 0 
                                                 ? Math.round((game.upVotes / (game.upVotes + game.downVotes)) * 100) + '%'
                                                 : 'N/A'
                                             }
-                                        </p>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -134,8 +135,10 @@ export const TopGames: React.FC = () => {
                 </div>
             )}
             
-            <div className="mt-12 text-center">
-                <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">Data provided by Roblox API • Updated Real-time</p>
+            <div className="mt-12 text-center border-t border-white/5 pt-8">
+                <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">
+                    Official Roblox API • Live Data Stream
+                </p>
             </div>
         </div>
     );

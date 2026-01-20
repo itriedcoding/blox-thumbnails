@@ -1,7 +1,8 @@
+
 export type ThumbnailStyle = 'cinematic' | 'simulator' | 'obby' | 'horror' | 'rpg' | 'anime' | 'high-ctr';
 export type ModelType = 'flash' | 'pro';
 export type AvatarModel = 'R6' | 'R15' | 'Rthro';
-export type ViewType = 'home' | 'generator' | 'dashboard' | 'top-games' | 'terms' | 'privacy';
+export type ViewType = 'home' | 'generator' | 'dashboard' | 'terms' | 'privacy';
 
 declare global {
   interface AIStudio {

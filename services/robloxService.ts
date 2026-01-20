@@ -89,101 +89,54 @@ export const getRobloxAvatar = async (username: string, model: AvatarModel): Pro
   }
 };
 
-export const getTopGames = async (limit: number = 100): Promise<RobloxGame[]> => {
+export const getTopGames = async (limit: number = 40): Promise<RobloxGame[]> => {
     try {
-        let gamesRaw: any[] = [];
-        let universeIds: number[] = [];
-
-        // STRATEGY 1: Official Sorts (Mimic "Popular" tab)
-        // This gives us the true "Top" list.
-        try {
-            const sortsData = await fetchWithRetries("https://games.roblox.com/v1/games/sorts?gameSortsContext=GamesDefaultSorts");
-            const popularSort = sortsData.sorts?.find((s: any) => 
-                s.name === "Popular" || s.name === "MostEngaging" || s.displayName === "Popular"
-            ) || sortsData.sorts?.[0];
-
-            if (popularSort?.token) {
-                const listData = await fetchWithRetries(`https://games.roblox.com/v1/games/list?sortToken=${popularSort.token}&limit=${limit}`);
-                if (listData.games?.length > 0) {
-                    gamesRaw = listData.games;
-                }
-            }
-        } catch (e) {
-            console.warn("Strategy 1 (Sorts) failed, attempting live aggregation...", e);
-        }
-
-        // STRATEGY 2: Live Aggregation (Mimic "Home" Page Discovery)
-        // If sorts fail, we build a diverse list by querying major categories live.
-        // This ensures NO mocks/fakes, only real games from the API.
-        if (gamesRaw.length === 0) {
-            console.log("Using Strategy 2: Live Category Aggregation");
-            const categories = ["Simulator", "Roleplay", "Tycoon", "Obby", "Anime", "Action", "Survival", "Horror"];
-            
-            // Fetch categories in parallel to be fast
-            const promises = categories.map(cat => 
-                fetchWithRetries(`https://games.roblox.com/v1/games/list?keyword=${cat}&limit=20`)
-                    .then(data => data.games || [])
-                    .catch(() => [])
-            );
-            
-            const results = await Promise.all(promises);
-            // Interleave results to create a mixed feed
-            const maxLength = Math.max(...results.map(r => r.length));
-            for (let i = 0; i < maxLength; i++) {
-                for (const catGames of results) {
-                    if (catGames[i]) gamesRaw.push(catGames[i]);
-                }
-            }
-        }
-
-        // Deduplicate
-        const uniqueMap = new Map();
-        gamesRaw.forEach((g: any) => {
-            const uId = g.universeId || g.id;
-            if (uId && !uniqueMap.has(uId)) {
-                uniqueMap.set(uId, g);
-            }
-        });
+        // 1. Fetch Games List
+        const listUrl = `https://games.roblox.com/v1/games/list?sortToken=&limit=${limit}`;
+        const listData = await fetchWithRetries(listUrl);
         
-        gamesRaw = Array.from(uniqueMap.values());
+        if (!listData.games) return [];
+        
+        const gamesBasic = listData.games;
+        const universeIds = gamesBasic.map((g: any) => g.universeId).join(',');
 
-        if (gamesRaw.length === 0) throw new Error("Unable to retrieve any games from Roblox API");
+        // 2. Get Details (for visits, proper description)
+        const detailsUrl = `https://games.roblox.com/v1/games?universeIds=${universeIds}`;
+        const detailsData = await fetchWithRetries(detailsUrl);
+        const detailsMap = new Map();
+        if (detailsData.data) {
+            detailsData.data.forEach((d: any) => detailsMap.set(d.id, d));
+        }
 
-        // Limit processing
-        const slicedGames = gamesRaw.slice(0, limit);
-        universeIds = slicedGames.map((g: any) => g.universeId || g.id);
-        const idsString = universeIds.join(',');
+        // 3. Get Thumbnails
+        const thumbUrl = `https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeIds}&returnPolicy=PlaceHolder&size=512x512&format=Png&isCircular=false`;
+        const thumbMap = new Map();
+        try {
+            const thumbData = await fetchWithRetries(thumbUrl);
+            if (thumbData.data) {
+                thumbData.data.forEach((d: any) => thumbMap.set(d.targetId, d.imageUrl));
+            }
+        } catch(e) { console.warn("Thumb fetch failed", e); }
 
-        // 3. Batch Details (Live Stats)
-        const detailsData = await fetchWithRetries(`https://games.roblox.com/v1/games?universeIds=${idsString}`);
-        const detailsMap = new Map<any, any>((detailsData.data || []).map((d: any) => [d.id, d]));
-
-        // 4. Batch Thumbnails (Live Images)
-        const thumbData = await fetchWithRetries(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${idsString}&size=512x512&format=Png&isCircular=false`);
-        const thumbMap = new Map<any, string>((thumbData.data || []).map((t: any) => [t.targetId, t.imageUrl]));
-
-        // 5. Merge
-        return slicedGames.map((raw: any) => {
-            const id = raw.universeId || raw.id;
-            const detail = detailsMap.get(id);
-            
-            // Prefer detail data, fallback to raw list data
+        // 4. Merge Data
+        return gamesBasic.map((g: any) => {
+            const details = detailsMap.get(g.universeId);
             return {
-                id: id,
-                rootPlaceId: detail?.rootPlaceId || raw?.placeId || 0,
-                name: detail?.name || raw?.name || "Unknown",
-                description: detail?.description || raw?.gameDescription || "",
-                playerCount: detail?.playing || raw?.playerCount || 0,
-                visits: detail?.visits || 0,
-                creatorName: detail?.creator?.name || raw?.creatorName || "Unknown",
-                thumbnailUrl: thumbMap.get(id),
-                upVotes: 0,
-                downVotes: 0
+                id: g.universeId,
+                rootPlaceId: g.placeId,
+                name: details?.name || g.name,
+                description: details?.description || g.gameDescription || "",
+                playerCount: details?.playing || g.playerCount || 0,
+                visits: details?.visits || 0,
+                creatorName: details?.creator?.name || g.creatorName || "Unknown",
+                thumbnailUrl: thumbMap.get(g.universeId),
+                upVotes: g.totalUpVotes || 0,
+                downVotes: g.totalDownVotes || 0
             };
-        }).sort((a: RobloxGame, b: RobloxGame) => b.playerCount - a.playerCount);
+        });
 
     } catch (error: any) {
-        console.error("Game Fetch Error:", error);
-        throw new Error("Could not load Top Games. Roblox API may be unreachable.");
+        console.error("Top Games Error:", error);
+        throw new Error(error.message || "Failed to load games");
     }
-}
+};

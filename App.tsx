@@ -6,7 +6,6 @@ import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { ThumbnailGenerator } from './components/ThumbnailGenerator';
 import { Gallery } from './components/Gallery';
-import { TopGames } from './components/TopGames';
 import { GeneratedImage, ThumbnailStyle, ModelType, AvatarModel, ViewType, ThumbnailConfig } from './types';
 import { sendToDiscord } from './services/discordService';
 
@@ -126,8 +125,6 @@ function App() {
             <main className="flex-1 flex flex-col pt-32 md:pt-40">
                 {currentView === 'home' && <Home setView={setCurrentView} />}
                 
-                {currentView === 'top-games' && <TopGames />}
-
                 {currentView === 'generator' && (
                     <div className="px-6 pb-32 w-full max-w-[1600px] mx-auto animate-fade-in-up">
                          <div className="text-center mb-16 relative">
